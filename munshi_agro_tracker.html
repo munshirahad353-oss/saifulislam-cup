@@ -158,7 +158,32 @@
   .cat-split h3 { font-size: 15px; margin: 0 0 10px; }
   .cat-split h3.in-h { color: var(--mid); }
   .cat-split h3.ex-h { color: var(--brown); }
-  .admin-bar { display: flex; justify-content: flex-end; margin-top: 14px; }
+  .cover-banner {
+    height: 190px; width: 100%; background: linear-gradient(135deg, var(--dark), var(--mid)) center/cover no-repeat;
+    background-image: url('cover.jpg'), linear-gradient(135deg, var(--dark), var(--mid));
+    position: relative;
+  }
+  .cover-banner::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.55));
+  }
+  @media (max-width: 640px) { .cover-banner { height: 130px; } }
+  .admin-bar { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .staff-btn { background: rgba(255,255,255,0.14); color: white; border: 1px solid rgba(255,255,255,0.35);
+    padding: 7px 14px; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .staff-btn:hover { background: rgba(255,255,255,0.24); }
+  .staff-btn.is-staff { background: var(--mid); color: white; border-color: var(--mid); }
+  .req-row { display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--soft); flex-wrap: wrap; }
+  .req-row:last-child { border-bottom: none; }
+  .req-info b { display: block; color: var(--dark); font-size: 14.5px; }
+  .req-info span { font-size: 12.5px; color: var(--muted); }
+  .req-actions { display: flex; gap: 8px; }
+  .req-actions button { border: none; border-radius: 8px; padding: 6px 12px; font-family: inherit;
+    font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .req-actions .approve { background: var(--mid); color: white; }
+  .req-actions .reject, .req-actions .revoke { background: var(--soft); color: var(--red); }
   .admin-btn {
     background: rgba(255,255,255,0.14); color: white; border: 1px solid rgba(255,255,255,0.35);
     padding: 7px 14px; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 600;
@@ -173,11 +198,13 @@
 </style>
 </head>
 <body>
+<div class="cover-banner" aria-hidden="true"></div>
 <header>
   <div class="wrap">
     <h1>মুন্সী এগ্রো — হিসাব-নিকাশ</h1>
     <p>দৈনন্দিন আয়-ব্যয়ের হিসাব রাখুন, বছরভিত্তিক নিট মুনাফা দেখুন</p>
     <div class="admin-bar">
+      <button class="staff-btn" id="staffBtn" type="button">👤 স্টাফ লগইন</button>
       <button class="admin-btn" id="adminBtn" type="button">🔒 অ্যাডমিন লগইন</button>
     </div>
   </div>
@@ -206,6 +233,7 @@
     <button type="button" class="nav-card" data-panel="panelSummary"><span class="nav-icon">📊</span><span class="nav-label">খাতভিত্তিক সারাংশ</span></button>
     <button type="button" class="nav-card" data-panel="panelChart"><span class="nav-icon">📈</span><span class="nav-label">বছরভিত্তিক আয়-ব্যয়</span></button>
     <button type="button" class="nav-card" data-panel="panelTable"><span class="nav-icon">🧾</span><span class="nav-label">সব এন্ট্রি</span></button>
+    <button type="button" class="nav-card admin-hidden" data-panel="panelStaff" id="staffNavCard"><span class="nav-icon">🛂</span><span class="nav-label">স্টাফ ব্যবস্থাপনা</span></button>
   </div>
 
   <div class="card section-panel" id="entryCard" data-panel-id="panelEntry">
@@ -318,6 +346,15 @@
       <div class="empty" id="emptyMsg" style="display:none;">এখনও কোনো এন্ট্রি নেই। উপরের ফর্ম দিয়ে যোগ করুন।</div>
     </div>
   </div>
+
+  <div class="card section-panel admin-hidden" id="staffCard" data-panel-id="panelStaff">
+    <h2>স্টাফ ব্যবস্থাপনা</h2>
+    <p class="view-note">স্টাফদের ইমেইল দিয়ে জানিয়ে দিন যে তারা "স্টাফ লগইন" বাটনে ক্লিক করে ইমেইল ও একটি পাসওয়ার্ড দিয়ে এক্সেসের অনুরোধ পাঠাতে পারবে। আপনি এখান থেকে অনুমোদন দিলে তারা শুধু <b>এন্ট্রি যোগ</b> করতে পারবে — মুছতে বা অন্য কিছু বদলাতে পারবে না।</p>
+    <h3 style="font-size:15px;margin:16px 0 6px;">অপেক্ষমাণ অনুরোধ</h3>
+    <div id="pendingReqList"><div class="empty" id="pendingEmpty">কোনো অপেক্ষমাণ অনুরোধ নেই।</div></div>
+    <h3 style="font-size:15px;margin:20px 0 6px;">অনুমোদিত স্টাফ</h3>
+    <div id="approvedReqList"><div class="empty" id="approvedEmpty">এখনো কোনো স্টাফ অনুমোদিত হয়নি।</div></div>
+  </div>
 </div>
 
 <script>
@@ -342,6 +379,7 @@ const CATS = {
 };
 /* ব্যবহারকারী নতুন যেসব খাত টাইপ করে যোগ করবেন সেগুলো এখানে (DATA-এর সাথে) সেভ হয় */
 if (!DATA.customCats) DATA.customCats = { income: [], expense: [] };
+if (!DATA.staff) DATA.staff = { pending: [], approved: [] };
 function allCats(type){
   const custom = (DATA.customCats && DATA.customCats[type]) ? DATA.customCats[type] : [];
   const seen = new Set();
@@ -386,6 +424,9 @@ function fmtDate(d){
    নিচের পাসওয়ার্ডটা বদলে নিজের একটা পাসওয়ার্ড বসিয়ে নিন: */
 const ADMIN_PASSWORD = "munshi2026";
 let isAdmin = localStorage.getItem("munshiIsAdmin") === "true";
+let isStaff = localStorage.getItem("munshiIsStaff") === "true" && !isAdmin;
+let staffEmail = localStorage.getItem("munshiStaffEmail") || null;
+function canEnterData(){ return isAdmin || isStaff; }
 
 let currentYear = "all";
 let currentType = "income";
@@ -647,21 +688,101 @@ function saveState(){
 
 function applyAdminUI(){
   const adminBtn = document.getElementById("adminBtn");
+  const staffBtn = document.getElementById("staffBtn");
   const entryCard = document.getElementById("entryCard");
   const entryNavCard = document.querySelector('.nav-card[data-panel="panelEntry"]');
+  const staffCard = document.getElementById("staffCard");
+  const staffNavCard = document.getElementById("staffNavCard");
   const publicNote = document.getElementById("publicNote");
   const actionsHead = document.getElementById("actionsHead");
 
   adminBtn.textContent = isAdmin ? "🔓 অ্যাডমিন মোড (লগআউট)" : "🔒 অ্যাডমিন লগইন";
   adminBtn.classList.toggle("is-admin", isAdmin);
-  entryCard.classList.toggle("admin-hidden", !isAdmin);
-  if (entryNavCard) entryNavCard.classList.toggle("admin-hidden", !isAdmin);
-  if (!isAdmin && entryCard.classList.contains("open")) {
+
+  staffBtn.textContent = isStaff ? "🔓 স্টাফ মোড (লগআউট)" : "👤 স্টাফ লগইন";
+  staffBtn.classList.toggle("is-staff", isStaff);
+  staffBtn.style.display = isAdmin ? "none" : "inline-flex";
+
+  const canEnter = canEnterData();
+  entryCard.classList.toggle("admin-hidden", !canEnter);
+  if (entryNavCard) entryNavCard.classList.toggle("admin-hidden", !canEnter);
+  if (!canEnter && entryCard.classList.contains("open")) {
     entryCard.classList.remove("open");
     if (entryNavCard) entryNavCard.classList.remove("active");
   }
-  publicNote.style.display = isAdmin ? "none" : "block";
+
+  staffCard.classList.toggle("admin-hidden", !isAdmin);
+  if (staffNavCard) staffNavCard.classList.toggle("admin-hidden", !isAdmin);
+  if (!isAdmin && staffCard.classList.contains("open")) {
+    staffCard.classList.remove("open");
+    if (staffNavCard) staffNavCard.classList.remove("active");
+  }
+  if (isAdmin) renderStaffLists();
+
+  publicNote.style.display = canEnter ? "none" : "block";
   actionsHead.textContent = "";
+}
+
+function renderStaffLists(){
+  const pendWrap = document.getElementById("pendingReqList");
+  const apprWrap = document.getElementById("approvedReqList");
+  const pending = DATA.staff.pending || [];
+  const approved = DATA.staff.approved || [];
+
+  pendWrap.innerHTML = "";
+  if (!pending.length) {
+    pendWrap.innerHTML = `<div class="empty">কোনো অপেক্ষমাণ অনুরোধ নেই।</div>`;
+  } else {
+    pending.forEach(r=>{
+      const row = document.createElement("div");
+      row.className = "req-row";
+      row.innerHTML = `
+        <div class="req-info"><b>${r.name || r.email}</b><span>${r.email}</span></div>
+        <div class="req-actions">
+          <button class="approve" data-id="${r.id}">অনুমোদন</button>
+          <button class="reject" data-id="${r.id}">বাতিল</button>
+        </div>`;
+      pendWrap.appendChild(row);
+    });
+    pendWrap.querySelectorAll(".approve").forEach(b=> b.onclick = () => approveStaff(b.dataset.id));
+    pendWrap.querySelectorAll(".reject").forEach(b=> b.onclick = () => rejectStaff(b.dataset.id));
+  }
+
+  apprWrap.innerHTML = "";
+  if (!approved.length) {
+    apprWrap.innerHTML = `<div class="empty">এখনো কোনো স্টাফ অনুমোদিত হয়নি।</div>`;
+  } else {
+    approved.forEach(r=>{
+      const row = document.createElement("div");
+      row.className = "req-row";
+      row.innerHTML = `
+        <div class="req-info"><b>${r.name || r.email}</b><span>${r.email}</span></div>
+        <div class="req-actions">
+          <button class="revoke" data-id="${r.id}">এক্সেস বাতিল</button>
+        </div>`;
+      apprWrap.appendChild(row);
+    });
+    apprWrap.querySelectorAll(".revoke").forEach(b=> b.onclick = () => revokeStaff(b.dataset.id));
+  }
+}
+
+function approveStaff(id){
+  const idx = DATA.staff.pending.findIndex(r=>r.id===id);
+  if (idx === -1) return;
+  const [req] = DATA.staff.pending.splice(idx,1);
+  DATA.staff.approved.push(req);
+  saveState();
+  renderStaffLists();
+}
+function rejectStaff(id){
+  DATA.staff.pending = DATA.staff.pending.filter(r=>r.id!==id);
+  saveState();
+  renderStaffLists();
+}
+function revokeStaff(id){
+  DATA.staff.approved = DATA.staff.approved.filter(r=>r.id!==id);
+  saveState();
+  renderStaffLists();
 }
 
 /* ---------- nav card panel switching ---------- */
@@ -694,7 +815,9 @@ document.getElementById("adminBtn").addEventListener("click", () => {
     if (pass === null) return;
     if (pass === ADMIN_PASSWORD) {
       isAdmin = true;
+      isStaff = false;
       localStorage.setItem("munshiIsAdmin", "true");
+      localStorage.setItem("munshiIsStaff", "false");
     } else {
       alert("পাসওয়ার্ড ভুল হয়েছে।");
       return;
@@ -702,6 +825,46 @@ document.getElementById("adminBtn").addEventListener("click", () => {
   }
   applyAdminUI();
   renderAll();
+});
+
+document.getElementById("staffBtn").addEventListener("click", () => {
+  if (isStaff) {
+    const ok = confirm("স্টাফ মোড থেকে বের হয়ে পাবলিক (শুধু-দেখা) ভিউতে যেতে চান?");
+    if (!ok) return;
+    isStaff = false;
+    staffEmail = null;
+    localStorage.setItem("munshiIsStaff", "false");
+    localStorage.removeItem("munshiStaffEmail");
+    applyAdminUI();
+    renderAll();
+    return;
+  }
+  const email = (prompt("আপনার ইমেইল দিন:") || "").trim().toLowerCase();
+  if (!email) return;
+  const password = prompt("আপনার পাসওয়ার্ড দিন:");
+  if (password === null || password === "") { alert("পাসওয়ার্ড দিতে হবে।"); return; }
+
+  const approved = (DATA.staff.approved || []).find(r => r.email === email);
+  if (approved) {
+    if (approved.password !== password) { alert("পাসওয়ার্ড ভুল হয়েছে।"); return; }
+    isStaff = true;
+    staffEmail = email;
+    localStorage.setItem("munshiIsStaff", "true");
+    localStorage.setItem("munshiStaffEmail", email);
+    applyAdminUI();
+    renderAll();
+    return;
+  }
+
+  const alreadyPending = (DATA.staff.pending || []).find(r => r.email === email);
+  if (alreadyPending) {
+    alert("আপনার অনুরোধ এখনো অ্যাডমিনের অনুমোদনের অপেক্ষায় আছে। অনুমোদন হলে এই একই ইমেইল-পাসওয়ার্ড দিয়ে লগইন করতে পারবেন।");
+    return;
+  }
+  const name = prompt("আপনার নাম লিখুন (ঐচ্ছিক):") || "";
+  DATA.staff.pending.push({ id: makeId(), email, password, name: name.trim() });
+  saveState();
+  alert("অনুরোধ পাঠানো হয়েছে। অ্যাডমিন অনুমোদন দিলে এই ইমেইল-পাসওয়ার্ড দিয়ে লগইন করে এন্ট্রি দিতে পারবেন।");
 });
 
 function deleteEntry(id){
@@ -717,7 +880,7 @@ function makeId(){
 
 document.getElementById("entryForm").addEventListener("submit", (ev)=>{
   ev.preventDefault();
-  if (!isAdmin) return;
+  if (!canEnterData()) return;
   const year = document.getElementById("fYear").value;
   const date = document.getElementById("fDate").value || null;
 
