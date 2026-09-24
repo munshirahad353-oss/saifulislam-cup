@@ -182,6 +182,17 @@
     </div>
   </div>
 
+  <div class="card">
+    <h2>খাতভিত্তিক সারাংশ</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>খাত</th><th>ধরন</th><th>মোট টাকা</th></tr></thead>
+        <tbody id="catSummaryBody"></tbody>
+      </table>
+      <div class="empty" id="catSummaryEmpty" style="display:none;">এই নির্বাচনে কোনো এন্ট্রি নেই।</div>
+    </div>
+  </div>
+
   <div class="card" id="entryCard">
     <h2>নতুন এন্ট্রি যোগ করুন</h2>
 
@@ -205,12 +216,17 @@
         <label>বছর</label>
         <select id="fYear"></select>
       </div>
+      <div>
+        <label>তারিখ</label>
+        <input type="date" id="fDate">
+      </div>
 
       <!-- একক এন্ট্রি -->
       <div id="singleFields" class="full" style="display:contents;">
         <div>
-          <label>ক্যাটাগরি</label>
-          <select id="fCategory"></select>
+          <label>খাত <span style="font-weight:400;">(তালিকা থেকে বাছুন বা নতুন খাতের নাম লিখুন)</span></label>
+          <input type="text" id="fCategory" list="catList" placeholder="যেমন: ধান, লাউ, পেয়ারা...">
+          <datalist id="catList"></datalist>
         </div>
         <div class="full">
           <label>পরিমাণ (টাকা)</label>
@@ -224,7 +240,8 @@
 
       <!-- একাধিক এন্ট্রি (বাল্ক) -->
       <div id="bulkFields" class="full" style="display:none;">
-        <label>খাত ও পরিমাণ (একাধিক)</label>
+        <label>খাত ও পরিমাণ (একাধিক) <span style="font-weight:400;">— তালিকা থেকে বাছুন বা নতুন খাতের নাম লিখুন</span></label>
+        <datalist id="bulkCatList"></datalist>
         <div id="bulkRows"></div>
         <button type="button" class="add-row-btn" id="addRowBtn">+ আরেকটি খাত যোগ করুন</button>
         <div class="bulk-total">মোট: <b id="bulkTotal">৳০</b> (<span id="bulkCount">০</span>টি খাত)</div>
@@ -244,7 +261,7 @@
     <div class="table-wrap">
       <table id="entriesTable">
         <thead>
-          <tr><th>বিবরণ</th><th>ক্যাটাগরি</th><th>ধরন</th><th>পরিমাণ</th><th id="actionsHead"></th></tr>
+          <tr><th>তারিখ</th><th>বিবরণ</th><th>ক্যাটাগরি</th><th>ধরন</th><th>পরিমাণ</th><th id="actionsHead"></th></tr>
         </thead>
         <tbody id="entriesBody"></tbody>
       </table>
@@ -255,7 +272,7 @@
 
 <script>
 /* ---------- DATA (embedded snapshot, republished on each change) ---------- */
-const SEED_DATA = {"entries": [{"id": "seedi1", "type": "income", "year": "১ম", "category": "পশুপালন", "amount": 175000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi2", "type": "income", "year": "১ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi3", "type": "income", "year": "১ম", "category": "মাছ চাষ", "amount": 120000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi4", "type": "income", "year": "১ম", "category": "লাউ/কুমড়া/ধান", "amount": 120000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi5", "type": "income", "year": "১ম", "category": "শাক-সবজি", "amount": 25000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi6", "type": "income", "year": "১ম", "category": "ফলজ বাগান", "amount": 35000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede7", "type": "expense", "year": "১ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 110000, "note": "পশু ও পোল্ট্রি খাদ্য ও ওষুধ"}, {"id": "seede8", "type": "expense", "year": "১ম", "category": "কৃষি ও সেচ", "amount": 40000, "note": "কৃষি, ফলজ বাগান ও ধান চাষ"}, {"id": "seede9", "type": "expense", "year": "১ম", "category": "মাছ চাষ ও ক্যানেল", "amount": 25000, "note": "মাছ চাষ ও ক্যানেল পরিচর্যা"}, {"id": "seede10", "type": "expense", "year": "১ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 15000, "note": "পরিবহন ও বিদ্যুৎ বিল"}, {"id": "seedi11", "type": "income", "year": "২য়", "category": "পশুপালন", "amount": 236000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi12", "type": "income", "year": "২য়", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi13", "type": "income", "year": "২য়", "category": "মাছ চাষ", "amount": 180000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi14", "type": "income", "year": "২য়", "category": "লাউ/কুমড়া/ধান", "amount": 140000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi15", "type": "income", "year": "২য়", "category": "শাক-সবজি", "amount": 30000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi16", "type": "income", "year": "২য়", "category": "ফলজ বাগান", "amount": 114000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede17", "type": "expense", "year": "২য়", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 90000, "note": "গরু-ছাগলের সম্পূরক খাদ্য ও চিকিৎসা"}, {"id": "seede18", "type": "expense", "year": "২য়", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 40000, "note": "পোল্ট্রি খাবার ও ভ্যাকসিন"}, {"id": "seede19", "type": "expense", "year": "২য়", "category": "কৃষি ও সেচ", "amount": 50000, "note": "সার, বালাইনাশক ও সেচ খরচ"}, {"id": "seede20", "type": "expense", "year": "২য়", "category": "মাছ চাষ ও ক্যানেল", "amount": 30000, "note": "মাছের খাবার ও মাচা মেরামত"}, {"id": "seede21", "type": "expense", "year": "২য়", "category": "কর্মচারীর বেতন", "amount": 144000, "note": "১ জন কর্মচারী (১২,০০০/মাস)"}, {"id": "seedi22", "type": "income", "year": "৩য়", "category": "পশুপালন", "amount": 305000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi23", "type": "income", "year": "৩য়", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi24", "type": "income", "year": "৩য়", "category": "মাছ চাষ", "amount": 220000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi25", "type": "income", "year": "৩য়", "category": "লাউ/কুমড়া/ধান", "amount": 160000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi26", "type": "income", "year": "৩য়", "category": "শাক-সবজি", "amount": 35000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi27", "type": "income", "year": "৩য়", "category": "ফলজ বাগান", "amount": 143000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede28", "type": "expense", "year": "৩য়", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 150000, "note": "পশুপালন ও পোল্ট্রি খাদ্য/ওষুধ"}, {"id": "seede29", "type": "expense", "year": "৩য়", "category": "কৃষি ও সেচ", "amount": 80000, "note": "কৃষি, বাগান ও মৎস্য চাষ খরচ"}, {"id": "seede30", "type": "expense", "year": "৩য়", "category": "পরিবহন ও বিদ্যুৎ", "amount": 10000, "note": "পরিবহন ও রক্ষণাবেক্ষণ"}, {"id": "seede31", "type": "expense", "year": "৩য়", "category": "কর্মচারীর বেতন", "amount": 151200, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}, {"id": "seedi32", "type": "income", "year": "৪র্থ", "category": "পশুপালন", "amount": 366000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi33", "type": "income", "year": "৪র্থ", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi34", "type": "income", "year": "৪র্থ", "category": "মাছ চাষ", "amount": 250000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi35", "type": "income", "year": "৪র্থ", "category": "লাউ/কুমড়া/ধান", "amount": 175000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi36", "type": "income", "year": "৪র্থ", "category": "শাক-সবজি", "amount": 45000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi37", "type": "income", "year": "৪র্থ", "category": "ফলজ বাগান", "amount": 170000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede38", "type": "expense", "year": "৪র্থ", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 175000, "note": "পশুপালন ও পোল্ট্রি খাদ্য/ওষুধ"}, {"id": "seede39", "type": "expense", "year": "৪র্থ", "category": "মাছ চাষ ও ক্যানেল", "amount": 80000, "note": "মাচা সংস্কার, মাছের ফিড ও সার"}, {"id": "seede40", "type": "expense", "year": "৪র্থ", "category": "পরিবহন ও বিদ্যুৎ", "amount": 20000, "note": "পরিবহন ও বিদ্যুৎ বিল"}, {"id": "seede41", "type": "expense", "year": "৪র্থ", "category": "কর্মচারীর বেতন", "amount": 158760, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}, {"id": "seedi42", "type": "income", "year": "৫ম", "category": "পশুপালন", "amount": 435000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi43", "type": "income", "year": "৫ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi44", "type": "income", "year": "৫ম", "category": "মাছ চাষ", "amount": 300000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi45", "type": "income", "year": "৫ম", "category": "লাউ/কুমড়া/ধান", "amount": 190000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi46", "type": "income", "year": "৫ম", "category": "শাক-সবজি", "amount": 50000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi47", "type": "income", "year": "৫ম", "category": "ফলজ বাগান", "amount": 190000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede48", "type": "expense", "year": "৫ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 200000, "note": "পশু ও পোল্ট্রি খাদ্য/চিকিৎসা"}, {"id": "seede49", "type": "expense", "year": "৫ম", "category": "মাছ চাষ ও ক্যানেল", "amount": 95000, "note": "মৎস্য খাদ্য ও বাগান পরিচর্যা"}, {"id": "seede50", "type": "expense", "year": "৫ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 20000, "note": "পরিবহন ও মেরামত"}, {"id": "seede51", "type": "expense", "year": "৫ম", "category": "কর্মচারীর বেতন", "amount": 166696, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}, {"id": "seedi52", "type": "income", "year": "৬ষ্ঠ", "category": "পশুপালন", "amount": 500000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi53", "type": "income", "year": "৬ষ্ঠ", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi54", "type": "income", "year": "৬ষ্ঠ", "category": "মাছ চাষ", "amount": 320000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi55", "type": "income", "year": "৬ষ্ঠ", "category": "লাউ/কুমড়া/ধান", "amount": 200000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi56", "type": "income", "year": "৬ষ্ঠ", "category": "শাক-সবজি", "amount": 60000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi57", "type": "income", "year": "৬ষ্ঠ", "category": "ফলজ বাগান", "amount": 200000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede58", "type": "expense", "year": "৬ষ্ঠ", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 220000, "note": "পশুপালন ও পোল্ট্রি খাদ্য/চিকিৎসা"}, {"id": "seede59", "type": "expense", "year": "৬ষ্ঠ", "category": "কৃষি ও সেচ", "amount": 110000, "note": "বাগান, মাছ চাষ ও সবজি খরচ"}, {"id": "seede60", "type": "expense", "year": "৬ষ্ঠ", "category": "পরিবহন ও বিদ্যুৎ", "amount": 20000, "note": "পরিবহন, বিদ্যুৎ ও অন্যান্য"}, {"id": "seede61", "type": "expense", "year": "৬ষ্ঠ", "category": "কর্মচারীর বেতন", "amount": 175031, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}, {"id": "seedi62", "type": "income", "year": "৭ম", "category": "পশুপালন", "amount": 565000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi63", "type": "income", "year": "৭ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi64", "type": "income", "year": "৭ম", "category": "মাছ চাষ", "amount": 350000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi65", "type": "income", "year": "৭ম", "category": "লাউ/কুমড়া/ধান", "amount": 210000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi66", "type": "income", "year": "৭ম", "category": "শাক-সবজি", "amount": 65000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi67", "type": "income", "year": "৭ম", "category": "ফলজ বাগান", "amount": 210000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede68", "type": "expense", "year": "৭ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 230000, "note": "পশু ও পোল্ট্রি খাদ্য/ওষুধ"}, {"id": "seede69", "type": "expense", "year": "৭ম", "category": "কৃষি ও সেচ", "amount": 120000, "note": "বাগান, মাছ চাষ ও কৃষি খরচ"}, {"id": "seede70", "type": "expense", "year": "৭ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 20000, "note": "পরিবহন ও বিদ্যুৎ খরচ"}, {"id": "seede71", "type": "expense", "year": "৭ম", "category": "কর্মচারীর বেতন", "amount": 183783, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}, {"id": "seedi72", "type": "income", "year": "৮ম", "category": "পশুপালন", "amount": 610000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi73", "type": "income", "year": "৮ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi74", "type": "income", "year": "৮ম", "category": "মাছ চাষ", "amount": 380000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi75", "type": "income", "year": "৮ম", "category": "লাউ/কুমড়া/ধান", "amount": 220000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi76", "type": "income", "year": "৮ম", "category": "শাক-সবজি", "amount": 70000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi77", "type": "income", "year": "৮ম", "category": "ফলজ বাগান", "amount": 220000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede78", "type": "expense", "year": "৮ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 240000, "note": "পশু ও পোল্ট্রি খাদ্য/চিকিৎসা"}, {"id": "seede79", "type": "expense", "year": "৮ম", "category": "কৃষি ও সেচ", "amount": 125000, "note": "কৃষি, মাচা ও মাছের ফিড"}, {"id": "seede80", "type": "expense", "year": "৮ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 25000, "note": "মেরামত ও পরিবহন"}, {"id": "seede81", "type": "expense", "year": "৮ম", "category": "কর্মচারীর বেতন", "amount": 192972, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}, {"id": "seedi82", "type": "income", "year": "৯ম", "category": "পশুপালন", "amount": 630000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi83", "type": "income", "year": "৯ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi84", "type": "income", "year": "৯ম", "category": "মাছ চাষ", "amount": 400000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi85", "type": "income", "year": "৯ম", "category": "লাউ/কুমড়া/ধান", "amount": 230000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi86", "type": "income", "year": "৯ম", "category": "শাক-সবজি", "amount": 75000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi87", "type": "income", "year": "৯ম", "category": "ফলজ বাগান", "amount": 230000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede88", "type": "expense", "year": "৯ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 250000, "note": "পশু ও পোল্ট্রি খাদ্য/ওষুধ"}, {"id": "seede89", "type": "expense", "year": "৯ম", "category": "কৃষি ও সেচ", "amount": 130000, "note": "বাগান ও মৎস্য চাষ খরচ"}, {"id": "seede90", "type": "expense", "year": "৯ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 30000, "note": "পরিবহন ও অন্যান্য পরিচালনা"}, {"id": "seede91", "type": "expense", "year": "৯ম", "category": "কর্মচারীর বেতন", "amount": 202621, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}, {"id": "seedi92", "type": "income", "year": "১০ম", "category": "পশুপালন", "amount": 675000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi93", "type": "income", "year": "১০ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi94", "type": "income", "year": "১০ম", "category": "মাছ চাষ", "amount": 420000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi95", "type": "income", "year": "১০ম", "category": "লাউ/কুমড়া/ধান", "amount": 240000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi96", "type": "income", "year": "১০ম", "category": "শাক-সবজি", "amount": 80000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi97", "type": "income", "year": "১০ম", "category": "ফলজ বাগান", "amount": 240000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede98", "type": "expense", "year": "১০ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 260000, "note": "পশু ও পোল্ট্রি খাদ্য/ওষুধ"}, {"id": "seede99", "type": "expense", "year": "১০ম", "category": "কৃষি ও সেচ", "amount": 135000, "note": "বাগান, সেচ ও মাছের ফিড"}, {"id": "seede100", "type": "expense", "year": "১০ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 35000, "note": "পরিবহন ও ওভারহোলিং খরচ"}, {"id": "seede101", "type": "expense", "year": "১০ম", "category": "কর্মচারীর বেতন", "amount": 212762, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}]};
+const SEED_DATA = {"entries": [{"id": "seedi1", "type": "income", "year": "১ম", "category": "পশুপালন", "amount": 175000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি", "date": null}, {"id": "seedi2", "type": "income", "year": "১ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি", "date": null}, {"id": "seedi3", "type": "income", "year": "১ম", "category": "মাছ চাষ", "amount": 120000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি", "date": null}, {"id": "seedi4a", "type": "income", "year": "১ম", "category": "ধান", "amount": 72000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi4b", "type": "income", "year": "১ম", "category": "লাউ", "amount": 24000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi4c", "type": "income", "year": "১ম", "category": "মিষ্টি কুমড়া", "amount": 24000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi5a", "type": "income", "year": "১ম", "category": "শিম", "amount": 10000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi5b", "type": "income", "year": "১ম", "category": "বেগুন", "amount": 8000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi5c", "type": "income", "year": "১ম", "category": "পেঁপে", "amount": 7000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi6a", "type": "income", "year": "১ম", "category": "লেবু", "amount": 10000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi6b", "type": "income", "year": "১ম", "category": "বরই", "amount": 12000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi6c", "type": "income", "year": "১ম", "category": "পেয়ারা", "amount": 13000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seede7", "type": "expense", "year": "১ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 110000, "note": "পশু ও পোল্ট্রি খাদ্য ও ওষুধ", "date": null}, {"id": "seede8", "type": "expense", "year": "১ম", "category": "কৃষি ও সেচ", "amount": 40000, "note": "কৃষি, ফলজ বাগান ও ধান চাষ", "date": null}, {"id": "seede9", "type": "expense", "year": "১ম", "category": "মাছ চাষ ও ক্যানেল", "amount": 25000, "note": "মাছ চাষ ও ক্যানেল পরিচর্যা", "date": null}, {"id": "seede10", "type": "expense", "year": "১ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 15000, "note": "পরিবহন ও বিদ্যুৎ বিল", "date": null}, {"id": "seedi11", "type": "income", "year": "২য়", "category": "পশুপালন", "amount": 236000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি", "date": null}, {"id": "seedi12", "type": "income", "year": "২য়", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি", "date": null}, {"id": "seedi13", "type": "income", "year": "২য়", "category": "মাছ চাষ", "amount": 180000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি", "date": null}, {"id": "seedi14a", "type": "income", "year": "২য়", "category": "ধান", "amount": 84000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi14b", "type": "income", "year": "২য়", "category": "লাউ", "amount": 28000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi14c", "type": "income", "year": "২য়", "category": "মিষ্টি কুমড়া", "amount": 28000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi15a", "type": "income", "year": "২য়", "category": "শিম", "amount": 12000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi15b", "type": "income", "year": "২য়", "category": "বেগুন", "amount": 9000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi15c", "type": "income", "year": "২য়", "category": "পেঁপে", "amount": 9000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi16a", "type": "income", "year": "২য়", "category": "লেবু", "amount": 34000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi16b", "type": "income", "year": "২য়", "category": "বরই", "amount": 40000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi16c", "type": "income", "year": "২য়", "category": "পেয়ারা", "amount": 40000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seede17", "type": "expense", "year": "২য়", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 90000, "note": "গরু-ছাগলের সম্পূরক খাদ্য ও চিকিৎসা", "date": null}, {"id": "seede18", "type": "expense", "year": "২য়", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 40000, "note": "পোল্ট্রি খাবার ও ভ্যাকসিন", "date": null}, {"id": "seede19", "type": "expense", "year": "২য়", "category": "কৃষি ও সেচ", "amount": 50000, "note": "সার, বালাইনাশক ও সেচ খরচ", "date": null}, {"id": "seede20", "type": "expense", "year": "২য়", "category": "মাছ চাষ ও ক্যানেল", "amount": 30000, "note": "মাছের খাবার ও মাচা মেরামত", "date": null}, {"id": "seede21", "type": "expense", "year": "২য়", "category": "কর্মচারীর বেতন", "amount": 144000, "note": "১ জন কর্মচারী (১২,০০০/মাস)", "date": null}, {"id": "seedi22", "type": "income", "year": "৩য়", "category": "পশুপালন", "amount": 305000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি", "date": null}, {"id": "seedi23", "type": "income", "year": "৩য়", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি", "date": null}, {"id": "seedi24", "type": "income", "year": "৩য়", "category": "মাছ চাষ", "amount": 220000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি", "date": null}, {"id": "seedi25a", "type": "income", "year": "৩য়", "category": "ধান", "amount": 96000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi25b", "type": "income", "year": "৩য়", "category": "লাউ", "amount": 32000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi25c", "type": "income", "year": "৩য়", "category": "মিষ্টি কুমড়া", "amount": 32000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi26a", "type": "income", "year": "৩য়", "category": "শিম", "amount": 14000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi26b", "type": "income", "year": "৩য়", "category": "বেগুন", "amount": 10000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi26c", "type": "income", "year": "৩য়", "category": "পেঁপে", "amount": 11000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi27a", "type": "income", "year": "৩য়", "category": "লেবু", "amount": 43000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi27b", "type": "income", "year": "৩য়", "category": "বরই", "amount": 50000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi27c", "type": "income", "year": "৩য়", "category": "পেয়ারা", "amount": 50000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seede28", "type": "expense", "year": "৩য়", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 150000, "note": "পশুপালন ও পোল্ট্রি খাদ্য/ওষুধ", "date": null}, {"id": "seede29", "type": "expense", "year": "৩য়", "category": "কৃষি ও সেচ", "amount": 80000, "note": "কৃষি, বাগান ও মৎস্য চাষ খরচ", "date": null}, {"id": "seede30", "type": "expense", "year": "৩য়", "category": "পরিবহন ও বিদ্যুৎ", "amount": 10000, "note": "পরিবহন ও রক্ষণাবেক্ষণ", "date": null}, {"id": "seede31", "type": "expense", "year": "৩য়", "category": "কর্মচারীর বেতন", "amount": 151200, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)", "date": null}, {"id": "seedi32", "type": "income", "year": "৪র্থ", "category": "পশুপালন", "amount": 366000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি", "date": null}, {"id": "seedi33", "type": "income", "year": "৪র্থ", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি", "date": null}, {"id": "seedi34", "type": "income", "year": "৪র্থ", "category": "মাছ চাষ", "amount": 250000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি", "date": null}, {"id": "seedi35a", "type": "income", "year": "৪র্থ", "category": "ধান", "amount": 105000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi35b", "type": "income", "year": "৪র্থ", "category": "লাউ", "amount": 35000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi35c", "type": "income", "year": "৪র্থ", "category": "মিষ্টি কুমড়া", "amount": 35000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi36a", "type": "income", "year": "৪র্থ", "category": "শিম", "amount": 18000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi36b", "type": "income", "year": "৪র্থ", "category": "বেগুন", "amount": 14000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi36c", "type": "income", "year": "৪র্থ", "category": "পেঁপে", "amount": 13000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi37a", "type": "income", "year": "৪র্থ", "category": "লেবু", "amount": 51000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi37b", "type": "income", "year": "৪র্থ", "category": "বরই", "amount": 59000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi37c", "type": "income", "year": "৪র্থ", "category": "পেয়ারা", "amount": 60000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seede38", "type": "expense", "year": "৪র্থ", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 175000, "note": "পশুপালন ও পোল্ট্রি খাদ্য/ওষুধ", "date": null}, {"id": "seede39", "type": "expense", "year": "৪র্থ", "category": "মাছ চাষ ও ক্যানেল", "amount": 80000, "note": "মাচা সংস্কার, মাছের ফিড ও সার", "date": null}, {"id": "seede40", "type": "expense", "year": "৪র্থ", "category": "পরিবহন ও বিদ্যুৎ", "amount": 20000, "note": "পরিবহন ও বিদ্যুৎ বিল", "date": null}, {"id": "seede41", "type": "expense", "year": "৪র্থ", "category": "কর্মচারীর বেতন", "amount": 158760, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)", "date": null}, {"id": "seedi42", "type": "income", "year": "৫ম", "category": "পশুপালন", "amount": 435000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি", "date": null}, {"id": "seedi43", "type": "income", "year": "৫ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি", "date": null}, {"id": "seedi44", "type": "income", "year": "৫ম", "category": "মাছ চাষ", "amount": 300000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি", "date": null}, {"id": "seedi45a", "type": "income", "year": "৫ম", "category": "ধান", "amount": 114000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi45b", "type": "income", "year": "৫ম", "category": "লাউ", "amount": 38000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi45c", "type": "income", "year": "৫ম", "category": "মিষ্টি কুমড়া", "amount": 38000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi46a", "type": "income", "year": "৫ম", "category": "শিম", "amount": 20000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi46b", "type": "income", "year": "৫ম", "category": "বেগুন", "amount": 15000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi46c", "type": "income", "year": "৫ম", "category": "পেঁপে", "amount": 15000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi47a", "type": "income", "year": "৫ম", "category": "লেবু", "amount": 57000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi47b", "type": "income", "year": "৫ম", "category": "বরই", "amount": 66000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi47c", "type": "income", "year": "৫ম", "category": "পেয়ারা", "amount": 67000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seede48", "type": "expense", "year": "৫ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 200000, "note": "পশু ও পোল্ট্রি খাদ্য/চিকিৎসা", "date": null}, {"id": "seede49", "type": "expense", "year": "৫ম", "category": "মাছ চাষ ও ক্যানেল", "amount": 95000, "note": "মৎস্য খাদ্য ও বাগান পরিচর্যা", "date": null}, {"id": "seede50", "type": "expense", "year": "৫ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 20000, "note": "পরিবহন ও মেরামত", "date": null}, {"id": "seede51", "type": "expense", "year": "৫ম", "category": "কর্মচারীর বেতন", "amount": 166696, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)", "date": null}, {"id": "seedi52", "type": "income", "year": "৬ষ্ঠ", "category": "পশুপালন", "amount": 500000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি", "date": null}, {"id": "seedi53", "type": "income", "year": "৬ষ্ঠ", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি", "date": null}, {"id": "seedi54", "type": "income", "year": "৬ষ্ঠ", "category": "মাছ চাষ", "amount": 320000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি", "date": null}, {"id": "seedi55a", "type": "income", "year": "৬ষ্ঠ", "category": "ধান", "amount": 120000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi55b", "type": "income", "year": "৬ষ্ঠ", "category": "লাউ", "amount": 40000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi55c", "type": "income", "year": "৬ষ্ঠ", "category": "মিষ্টি কুমড়া", "amount": 40000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi56a", "type": "income", "year": "৬ষ্ঠ", "category": "শিম", "amount": 24000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi56b", "type": "income", "year": "৬ষ্ঠ", "category": "বেগুন", "amount": 18000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi56c", "type": "income", "year": "৬ষ্ঠ", "category": "পেঁপে", "amount": 18000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi57a", "type": "income", "year": "৬ষ্ঠ", "category": "লেবু", "amount": 60000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi57b", "type": "income", "year": "৬ষ্ঠ", "category": "বরই", "amount": 70000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi57c", "type": "income", "year": "৬ষ্ঠ", "category": "পেয়ারা", "amount": 70000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seede58", "type": "expense", "year": "৬ষ্ঠ", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 220000, "note": "পশুপালন ও পোল্ট্রি খাদ্য/চিকিৎসা", "date": null}, {"id": "seede59", "type": "expense", "year": "৬ষ্ঠ", "category": "কৃষি ও সেচ", "amount": 110000, "note": "বাগান, মাছ চাষ ও সবজি খরচ", "date": null}, {"id": "seede60", "type": "expense", "year": "৬ষ্ঠ", "category": "পরিবহন ও বিদ্যুৎ", "amount": 20000, "note": "পরিবহন, বিদ্যুৎ ও অন্যান্য", "date": null}, {"id": "seede61", "type": "expense", "year": "৬ষ্ঠ", "category": "কর্মচারীর বেতন", "amount": 175031, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)", "date": null}, {"id": "seedi62", "type": "income", "year": "৭ম", "category": "পশুপালন", "amount": 565000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি", "date": null}, {"id": "seedi63", "type": "income", "year": "৭ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি", "date": null}, {"id": "seedi64", "type": "income", "year": "৭ম", "category": "মাছ চাষ", "amount": 350000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি", "date": null}, {"id": "seedi65a", "type": "income", "year": "৭ম", "category": "ধান", "amount": 126000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi65b", "type": "income", "year": "৭ম", "category": "লাউ", "amount": 42000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi65c", "type": "income", "year": "৭ম", "category": "মিষ্টি কুমড়া", "amount": 42000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi66a", "type": "income", "year": "৭ম", "category": "শিম", "amount": 26000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi66b", "type": "income", "year": "৭ম", "category": "বেগুন", "amount": 20000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi66c", "type": "income", "year": "৭ম", "category": "পেঁপে", "amount": 19000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi67a", "type": "income", "year": "৭ম", "category": "লেবু", "amount": 63000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi67b", "type": "income", "year": "৭ম", "category": "বরই", "amount": 74000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi67c", "type": "income", "year": "৭ম", "category": "পেয়ারা", "amount": 73000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seede68", "type": "expense", "year": "৭ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 230000, "note": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "date": null}, {"id": "seede69", "type": "expense", "year": "৭ম", "category": "কৃষি ও সেচ", "amount": 120000, "note": "বাগান, মাছ চাষ ও কৃষি খরচ", "date": null}, {"id": "seede70", "type": "expense", "year": "৭ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 20000, "note": "পরিবহন ও বিদ্যুৎ খরচ", "date": null}, {"id": "seede71", "type": "expense", "year": "৭ম", "category": "কর্মচারীর বেতন", "amount": 183783, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)", "date": null}, {"id": "seedi72", "type": "income", "year": "৮ম", "category": "পশুপালন", "amount": 610000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি", "date": null}, {"id": "seedi73", "type": "income", "year": "৮ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি", "date": null}, {"id": "seedi74", "type": "income", "year": "৮ম", "category": "মাছ চাষ", "amount": 380000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি", "date": null}, {"id": "seedi75a", "type": "income", "year": "৮ম", "category": "ধান", "amount": 132000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi75b", "type": "income", "year": "৮ম", "category": "লাউ", "amount": 44000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi75c", "type": "income", "year": "৮ম", "category": "মিষ্টি কুমড়া", "amount": 44000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi76a", "type": "income", "year": "৮ম", "category": "শিম", "amount": 28000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi76b", "type": "income", "year": "৮ম", "category": "বেগুন", "amount": 21000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi76c", "type": "income", "year": "৮ম", "category": "পেঁপে", "amount": 21000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi77a", "type": "income", "year": "৮ম", "category": "লেবু", "amount": 66000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi77b", "type": "income", "year": "৮ম", "category": "বরই", "amount": 77000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi77c", "type": "income", "year": "৮ম", "category": "পেয়ারা", "amount": 77000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seede78", "type": "expense", "year": "৮ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 240000, "note": "পশু ও পোল্ট্রি খাদ্য/চিকিৎসা", "date": null}, {"id": "seede79", "type": "expense", "year": "৮ম", "category": "কৃষি ও সেচ", "amount": 125000, "note": "কৃষি, মাচা ও মাছের ফিড", "date": null}, {"id": "seede80", "type": "expense", "year": "৮ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 25000, "note": "মেরামত ও পরিবহন", "date": null}, {"id": "seede81", "type": "expense", "year": "৮ম", "category": "কর্মচারীর বেতন", "amount": 192972, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)", "date": null}, {"id": "seedi82", "type": "income", "year": "৯ম", "category": "পশুপালন", "amount": 630000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি", "date": null}, {"id": "seedi83", "type": "income", "year": "৯ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি", "date": null}, {"id": "seedi84", "type": "income", "year": "৯ম", "category": "মাছ চাষ", "amount": 400000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি", "date": null}, {"id": "seedi85a", "type": "income", "year": "৯ম", "category": "ধান", "amount": 138000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi85b", "type": "income", "year": "৯ম", "category": "লাউ", "amount": 46000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi85c", "type": "income", "year": "৯ম", "category": "মিষ্টি কুমড়া", "amount": 46000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi86a", "type": "income", "year": "৯ম", "category": "শিম", "amount": 30000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi86b", "type": "income", "year": "৯ম", "category": "বেগুন", "amount": 22000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi86c", "type": "income", "year": "৯ম", "category": "পেঁপে", "amount": 23000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi87a", "type": "income", "year": "৯ম", "category": "লেবু", "amount": 69000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi87b", "type": "income", "year": "৯ম", "category": "বরই", "amount": 80000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi87c", "type": "income", "year": "৯ম", "category": "পেয়ারা", "amount": 81000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seede88", "type": "expense", "year": "৯ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 250000, "note": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "date": null}, {"id": "seede89", "type": "expense", "year": "৯ম", "category": "কৃষি ও সেচ", "amount": 130000, "note": "বাগান ও মৎস্য চাষ খরচ", "date": null}, {"id": "seede90", "type": "expense", "year": "৯ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 30000, "note": "পরিবহন ও অন্যান্য পরিচালনা", "date": null}, {"id": "seede91", "type": "expense", "year": "৯ম", "category": "কর্মচারীর বেতন", "amount": 202621, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)", "date": null}, {"id": "seedi92", "type": "income", "year": "১০ম", "category": "পশুপালন", "amount": 675000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি", "date": null}, {"id": "seedi93", "type": "income", "year": "১০ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি", "date": null}, {"id": "seedi94", "type": "income", "year": "১০ম", "category": "মাছ চাষ", "amount": 420000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি", "date": null}, {"id": "seedi95a", "type": "income", "year": "১০ম", "category": "ধান", "amount": 144000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi95b", "type": "income", "year": "১০ম", "category": "লাউ", "amount": 48000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi95c", "type": "income", "year": "১০ম", "category": "মিষ্টি কুমড়া", "amount": 48000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি", "date": null}, {"id": "seedi96a", "type": "income", "year": "১০ম", "category": "শিম", "amount": 32000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi96b", "type": "income", "year": "১০ম", "category": "বেগুন", "amount": 24000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi96c", "type": "income", "year": "১০ম", "category": "পেঁপে", "amount": 24000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি", "date": null}, {"id": "seedi97a", "type": "income", "year": "১০ম", "category": "লেবু", "amount": 72000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi97b", "type": "income", "year": "১০ম", "category": "বরই", "amount": 84000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seedi97c", "type": "income", "year": "১০ম", "category": "পেয়ারা", "amount": 84000, "note": "লেবু, কুল ও পেয়ারা বিক্রি", "date": null}, {"id": "seede98", "type": "expense", "year": "১০ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 260000, "note": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "date": null}, {"id": "seede99", "type": "expense", "year": "১০ম", "category": "কৃষি ও সেচ", "amount": 135000, "note": "বাগান, সেচ ও মাছের ফিড", "date": null}, {"id": "seede100", "type": "expense", "year": "১০ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 35000, "note": "পরিবহন ও ওভারহোলিং খরচ", "date": null}, {"id": "seede101", "type": "expense", "year": "১০ম", "category": "কর্মচারীর বেতন", "amount": 212762, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)", "date": null}]};
 
 const STORAGE_KEY = "munshiAgroData";
 let DATA;
@@ -268,10 +285,31 @@ try {
 }
 
 const YEARS = ["১ম","২য়","৩য়","৪র্থ","৫ম","৬ষ্ঠ","৭ম","৮ম","৯ম","১০ম"];
+/* ডিফল্ট (বিল্ট-ইন) খাতসমূহ — প্রতিটি ফসল/পণ্য এখন আলাদা আলাদা খাত */
 const CATS = {
-  income: ["পশুপালন","পোল্ট্রি (ডিম)","মাছ চাষ","লাউ/কুমড়া/ধান","শাক-সবজি","ফলজ বাগান","অন্যান্য আয়"],
+  income: ["পশুপালন","পোল্ট্রি (ডিম)","মাছ চাষ","ধান","লাউ","মিষ্টি কুমড়া","শসা","শিম","বেগুন","পেঁপে","লেবু","বরই","পেয়ারা","অন্যান্য আয়"],
   expense: ["পশু ও পোল্ট্রি খাদ্য/ওষুধ","কৃষি ও সেচ","মাছ চাষ ও ক্যানেল","পরিবহন ও বিদ্যুৎ","কর্মচারীর বেতন","অন্যান্য খরচ"]
 };
+/* ব্যবহারকারী নতুন যেসব খাত টাইপ করে যোগ করবেন সেগুলো এখানে (DATA-এর সাথে) সেভ হয় */
+if (!DATA.customCats) DATA.customCats = { income: [], expense: [] };
+function allCats(type){
+  const custom = (DATA.customCats && DATA.customCats[type]) ? DATA.customCats[type] : [];
+  const seen = new Set();
+  return CATS[type].concat(custom).filter(c => {
+    if (seen.has(c)) return false;
+    seen.add(c);
+    return true;
+  });
+}
+function ensureCategory(type, name){
+  name = (name || "").trim();
+  if (!name) return "";
+  if (!DATA.customCats) DATA.customCats = { income: [], expense: [] };
+  if (!allCats(type).includes(name)) {
+    DATA.customCats[type].push(name);
+  }
+  return name;
+}
 
 const bnDigits = "০১২৩৪৫৬৭৮৯";
 function bn(n){ return String(n).replace(/[0-9]/g, d => bnDigits[d]); }
@@ -282,6 +320,13 @@ function grp(n){
   return bn(rest + last3);
 }
 function money(n){ return "৳" + grp(n); }
+function fmtDate(d){
+  if (!d) return "—";
+  const parts = d.split("-");
+  if (parts.length !== 3) return "—";
+  const [y, m, day] = parts;
+  return bn(day) + "-" + bn(m) + "-" + bn(y);
+}
 
 /* ---------- ADMIN ACCESS ----------
    এটি একটি static (ব্যাকএন্ডবিহীন) ওয়েবসাইট, তাই এই পাসওয়ার্ড শুধু casual
@@ -367,8 +412,9 @@ function renderYearSelect(){
 }
 
 function renderCategorySelect(){
-  const sel = document.getElementById("fCategory");
-  sel.innerHTML = CATS[currentType].map(c => `<option value="${c}">${c}</option>`).join("");
+  const list = document.getElementById("catList");
+  list.innerHTML = allCats(currentType).map(c => `<option value="${c}"></option>`).join("");
+  document.getElementById("fCategory").value = "";
 }
 
 function makeBulkRow(){
@@ -380,7 +426,7 @@ function makeBulkRow(){
   row.innerHTML = `
     <div>
       <label>খাত</label>
-      <select class="bulkCat">${CATS[currentType].map(c => `<option value="${c}">${c}</option>`).join("")}</select>
+      <input type="text" class="bulkCat" list="bulkCatList" placeholder="যেমন: ধান, লাউ...">
     </div>
     <div>
       <label>পরিমাণ (টাকা)</label>
@@ -407,11 +453,9 @@ function resetBulkRows(){
 }
 
 function refreshBulkCategoryOptions(){
-  document.querySelectorAll("#bulkRows .bulkCat").forEach(sel=>{
-    const prev = sel.value;
-    sel.innerHTML = CATS[currentType].map(c => `<option value="${c}">${c}</option>`).join("");
-    if (CATS[currentType].includes(prev)) sel.value = prev;
-  });
+  const list = document.getElementById("bulkCatList");
+  if (list) list.innerHTML = allCats(currentType).map(c => `<option value="${c}"></option>`).join("");
+  document.querySelectorAll("#bulkRows .bulkCat").forEach(inp=>{ inp.value = ""; });
 }
 
 function updateBulkTotal(){
@@ -427,7 +471,12 @@ function updateBulkTotal(){
 
 function renderTable(){
   const body = document.getElementById("entriesBody");
-  const list = entriesForYear(currentYear).slice().reverse();
+  const list = entriesForYear(currentYear).slice().sort((a, b) => {
+    if (a.date && b.date) return b.date.localeCompare(a.date);
+    if (a.date) return -1;
+    if (b.date) return 1;
+    return 0;
+  });
   body.innerHTML = "";
   document.getElementById("entriesTitle").textContent =
     currentYear === "all" ? "সব এন্ট্রি" : (currentYear + " বছরের এন্ট্রি");
@@ -435,6 +484,7 @@ function renderTable(){
   list.forEach(e => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
+      <td>${fmtDate(e.date)}</td>
       <td>${e.note ? e.note : "—"}<div style="font-size:12px;color:var(--muted)">${e.year} বছর</div></td>
       <td><span class="cat-pill">${e.category}</span></td>
       <td>${e.type === "income" ? "আয়" : "খরচ"}</td>
@@ -450,11 +500,38 @@ function renderTable(){
   }
 }
 
+function renderCatSummary(){
+  const body = document.getElementById("catSummaryBody");
+  const list = entriesForYear(currentYear);
+  const totals = {};
+  list.forEach(e=>{
+    const key = e.type + "||" + e.category;
+    totals[key] = (totals[key] || 0) + e.amount;
+  });
+  const rows = Object.keys(totals).map(key=>{
+    const [type, category] = key.split("||");
+    return { type, category, amount: totals[key] };
+  }).sort((a,b)=> b.amount - a.amount);
+
+  body.innerHTML = "";
+  document.getElementById("catSummaryEmpty").style.display = rows.length ? "none" : "block";
+  rows.forEach(r=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><span class="cat-pill">${r.category}</span></td>
+      <td>${r.type === "income" ? "আয়" : "খরচ"}</td>
+      <td class="amt ${r.type==='income'?'in':'ex'}">${money(r.amount)}</td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
 function renderAll(){
   renderTabs();
   renderStats();
   renderChart();
   renderTable();
+  renderCatSummary();
 }
 
 document.getElementById("typeSeg").addEventListener("click", (ev)=>{
@@ -551,32 +628,37 @@ document.getElementById("entryForm").addEventListener("submit", (ev)=>{
   ev.preventDefault();
   if (!isAdmin) return;
   const year = document.getElementById("fYear").value;
+  const date = document.getElementById("fDate").value || null;
 
   if (currentMode === "single") {
     const amount = parseFloat(document.getElementById("fAmount").value);
-    if (!amount || amount <= 0) return;
+    const category = ensureCategory(currentType, document.getElementById("fCategory").value);
+    if (!amount || amount <= 0 || !category) return;
     DATA.entries.push({
       id: makeId(),
       type: currentType,
       year: year,
-      category: document.getElementById("fCategory").value,
+      date: date,
+      category: category,
       amount: amount,
       note: document.getElementById("fNote").value.trim()
     });
     document.getElementById("fAmount").value = "";
     document.getElementById("fNote").value = "";
+    document.getElementById("fCategory").value = "";
   } else {
     const note = document.getElementById("fBulkNote").value.trim();
     const rows = Array.from(document.querySelectorAll("#bulkRows .bulk-row"));
     let added = 0;
     rows.forEach(r=>{
       const amount = parseFloat(r.querySelector(".bulkAmt").value);
-      const category = r.querySelector(".bulkCat").value;
-      if (amount > 0) {
+      const category = ensureCategory(currentType, r.querySelector(".bulkCat").value);
+      if (amount > 0 && category) {
         DATA.entries.push({
           id: makeId(),
           type: currentType,
           year: year,
+          date: date,
           category: category,
           amount: amount,
           note: note
@@ -589,6 +671,8 @@ document.getElementById("entryForm").addEventListener("submit", (ev)=>{
     resetBulkRows();
   }
 
+  renderCategorySelect();
+  refreshBulkCategoryOptions();
   renderAll();
   saveState();
 });
@@ -597,6 +681,12 @@ document.getElementById("entryForm").addEventListener("submit", (ev)=>{
 applyAdminUI();
 renderYearSelect();
 renderCategorySelect();
+refreshBulkCategoryOptions();
+(function(){
+  const d = new Date();
+  const iso = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  document.getElementById("fDate").value = iso;
+})();
 renderAll();
 </script>
 </body>
