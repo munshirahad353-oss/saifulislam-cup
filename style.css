@@ -335,19 +335,24 @@ a:focus-visible, button:focus-visible {
   font-weight: 600;
 }
 
-/* ---------- hero visual (vector illustration) ---------- */
-.hero-visual {
-  position: relative;
-  animation: rise 0.8s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+/* ---------- hero corner decoration (vector illustration) ---------- */
+.hero { overflow: hidden; }
+.hero-decor {
+  position: absolute;
+  top: 6px;
+  right: 1%;
+  width: 210px;
+  opacity: 0.14;
+  pointer-events: none;
+  z-index: -1;
 }
-.hero-visual svg { width: 100%; height: auto; display: block; }
-.hero-visual .stalk { stroke: var(--paddy); }
-.hero-visual .stalk-deep { stroke: var(--soil); }
-.hero-visual .grain { fill: var(--harvest); }
-.hero-visual .water-line { stroke: var(--water); opacity: 0.5; }
-
+.hero-decor svg { width: 100%; height: auto; display: block; }
+.hero-decor .stalk { stroke: var(--paddy); }
+.hero-decor .stalk-deep { stroke: var(--soil); }
+.hero-decor .grain { fill: var(--harvest); }
+.hero-decor .water-line { stroke: var(--water); }
 @media (max-width: 860px) {
-  .hero-visual { max-width: 320px; margin: 0 auto; }
+  .hero-decor { display: none; }
 }
 
 /* ---------- availability badge ---------- */
