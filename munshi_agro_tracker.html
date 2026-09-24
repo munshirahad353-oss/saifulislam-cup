@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
 <style>
   :root {
     --dark: #1B4332;
@@ -347,8 +349,14 @@
 
   <div class="card section-panel admin-hidden" id="staffCard" data-panel-id="panelStaff">
     <h2>স্টাফ ব্যবস্থাপনা</h2>
-    <p class="view-note">এটা যেহেতু কোনো সার্ভার-ভিত্তিক সাইট না, তাই স্টাফের অনুরোধ নিজে থেকে এসে এখানে "পেন্ডিং" হিসেবে দেখানো সম্ভব না। বরং স্টাফকে ফোনে/মেসেজে তার নাম, ইমেইল ও একটা পাসওয়ার্ড ঠিক করে আপনাকে জানাতে বলুন — আপনি নিচের ফর্মে সেটা বসিয়ে সরাসরি "যোগ করুন" চাপলেই তার এক্সেস চালু হয়ে যাবে। অনুমোদনের পর সে শুধু <b>এন্ট্রি যোগ</b> করতে পারবে — মুছতে বা অন্য কিছু বদলাতে পারবে না।</p>
-    <h3 style="font-size:15px;margin:16px 0 8px;">নতুন স্টাফ যোগ করুন</h3>
+    <p class="view-note">এখন ডেটা ক্লাউডে (সব ডিভাইসে শেয়ার্ড) সিঙ্ক হয়, তাই স্টাফ তার নিজের ফোন থেকে "স্টাফ লগইন" দিয়ে অনুরোধ পাঠালে সেটা এখানে নিচে "অপেক্ষমাণ অনুরোধ"-এ দেখাবে। "অনুমোদন" চাপলেই সে এক্সেস পেয়ে যাবে — শুধু <b>এন্ট্রি যোগ</b> করতে পারবে, মুছতে বা অন্য কিছু বদলাতে পারবে না।</p>
+    <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+      <button type="button" id="resetStaffBtn"
+        style="border:none;border-radius:8px;padding:7px 14px;background:var(--soft);color:var(--red);font-weight:700;cursor:pointer;font-family:inherit;font-size:12.5px;">সব স্টাফ এক্সেস রিসেট করুন</button>
+    </div>
+    <h3 style="font-size:15px;margin:6px 0 6px;">অপেক্ষমাণ অনুরোধ</h3>
+    <div id="pendingReqList"><div class="empty" id="pendingEmpty">কোনো অপেক্ষমাণ অনুরোধ নেই।</div></div>
+    <h3 style="font-size:15px;margin:20px 0 8px;">নতুন স্টাফ সরাসরি যোগ করুন (ঐচ্ছিক)</h3>
     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px;">
       <input type="text" id="staffNameInput" placeholder="নাম"
         style="flex:1; min-width:120px; padding:9px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:13.5px;">
@@ -388,6 +396,31 @@ const CATS = {
 /* ব্যবহারকারী নতুন যেসব খাত টাইপ করে যোগ করবেন সেগুলো এখানে (DATA-এর সাথে) সেভ হয় */
 if (!DATA.customCats) DATA.customCats = { income: [], expense: [] };
 if (!DATA.staff) DATA.staff = { pending: [], approved: [] };
+
+/* ---------- Firebase (ঐচ্ছিক ক্লাউড সিঙ্ক) ----------
+   নিচের কনফিগটা আপনার নিজের Firebase প্রজেক্টের কনফিগ দিয়ে বদলে দিন।
+   Firebase Console > Project settings > General > "Your apps" > SDK setup and configuration
+   কনফিগ না বদলালে সাইট আগের মতোই শুধু এই ব্রাউজারে (localStorage) কাজ করবে। */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyA-To7VOnQPsaM5fU-GU90Onj70hv_7K4c",
+  authDomain: "munshi-agro-8ed57.firebaseapp.com",
+  projectId: "munshi-agro-8ed57",
+  storageBucket: "munshi-agro-8ed57.firebasestorage.app",
+  messagingSenderId: "566985564185",
+  appId: "1:566985564185:web:7e1d18731dc18f0f560a88"
+};
+const FIREBASE_ENABLED = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+let cloudDocRef = null;
+let suppressCloudEcho = false;
+if (FIREBASE_ENABLED) {
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    cloudDocRef = firebase.firestore().collection("munshiAgro").doc("shared");
+  } catch (err) {
+    console.error("Firebase init failed", err);
+    cloudDocRef = null;
+  }
+}
 function allCats(type){
   const custom = (DATA.customCats && DATA.customCats[type]) ? DATA.customCats[type] : [];
   const seen = new Set();
@@ -712,6 +745,13 @@ function saveState(){
     console.error("localStorage save failed", err);
     alert("দুঃখিত, ব্রাউজারে সেভ করা যায়নি। আপনার ব্রাউজারে স্টোরেজ বন্ধ থাকতে পারে।");
   }
+  if (cloudDocRef) {
+    suppressCloudEcho = true;
+    cloudDocRef.set(DATA).catch(err => {
+      console.error("Cloud save failed", err);
+      alert("ইন্টারনেট সংযোগ চেক করুন — এই পরিবর্তনটা ক্লাউডে (অন্য সবার জন্য) সেভ করা যায়নি, শুধু এই ডিভাইসে সেভ হয়েছে।");
+    });
+  }
 }
 
 function applyAdminUI(){
@@ -752,8 +792,29 @@ function applyAdminUI(){
 }
 
 function renderStaffLists(){
+  const pendWrap = document.getElementById("pendingReqList");
   const apprWrap = document.getElementById("approvedReqList");
+  const pending = DATA.staff.pending || [];
   const approved = DATA.staff.approved || [];
+
+  pendWrap.innerHTML = "";
+  if (!pending.length) {
+    pendWrap.innerHTML = `<div class="empty">কোনো অপেক্ষমাণ অনুরোধ নেই।</div>`;
+  } else {
+    pending.forEach(r=>{
+      const row = document.createElement("div");
+      row.className = "req-row";
+      row.innerHTML = `
+        <div class="req-info"><b>${r.name || r.email}</b><span>${r.email}</span></div>
+        <div class="req-actions">
+          <button class="approve" data-id="${r.id}">অনুমোদন</button>
+          <button class="reject" data-id="${r.id}">বাতিল</button>
+        </div>`;
+      pendWrap.appendChild(row);
+    });
+    pendWrap.querySelectorAll(".approve").forEach(b=> b.onclick = () => approveStaff(b.dataset.id));
+    pendWrap.querySelectorAll(".reject").forEach(b=> b.onclick = () => rejectStaff(b.dataset.id));
+  }
 
   apprWrap.innerHTML = "";
   if (!approved.length) {
@@ -778,6 +839,29 @@ function revokeStaff(id){
   saveState();
   renderStaffLists();
 }
+function approveStaff(id){
+  const idx = (DATA.staff.pending || []).findIndex(r=>r.id===id);
+  if (idx === -1) return;
+  const [req] = DATA.staff.pending.splice(idx,1);
+  const exists = (DATA.staff.approved || []).find(r=>r.email===req.email);
+  if (!exists) DATA.staff.approved.push(req);
+  saveState();
+  renderStaffLists();
+}
+function rejectStaff(id){
+  DATA.staff.pending = (DATA.staff.pending || []).filter(r=>r.id!==id);
+  saveState();
+  renderStaffLists();
+}
+
+document.getElementById("resetStaffBtn").addEventListener("click", () => {
+  const ok = confirm("আগে যারা এক্সেস চেয়েছে বা পেয়েছে তাদের সবার তথ্য মুছে ফেলা হবে — তারা আবার নতুন করে অনুরোধ পাঠাতে পারবে। এগিয়ে যেতে চান?");
+  if (!ok) return;
+  DATA.staff = { pending: [], approved: [] };
+  saveState();
+  renderStaffLists();
+  alert("স্টাফ তালিকা রিসেট হয়ে গেছে।");
+});
 
 document.getElementById("addStaffDirectBtn").addEventListener("click", () => {
   const nameInput = document.getElementById("staffNameInput");
@@ -874,7 +958,14 @@ document.getElementById("staffBtn").addEventListener("click", () => {
   }
 
   const name = prompt("আপনার নাম লিখুন (ঐচ্ছিক):") || "";
-  alert("আপনার এক্সেস এখনো তৈরি হয়নি। অ্যাডমিনকে আপনার নাম, ইমেইল ও এই পাসওয়ার্ডটি (ফোনে/মেসেজে) জানিয়ে দিন — তিনি 'স্টাফ ব্যবস্থাপনা' থেকে যোগ করে দিলে আপনি এই একই ইমেইল-পাসওয়ার্ড দিয়ে লগইন করে এন্ট্রি দিতে পারবেন।");
+  const alreadyPending = (DATA.staff.pending || []).find(r => r.email === email);
+  if (alreadyPending) {
+    alert("এই ইমেইল দিয়ে আপনার একটা অনুরোধ ইতিমধ্যে অ্যাডমিনের অনুমোদনের অপেক্ষায় আছে। অ্যাডমিন অনুমোদন দিলে এই একই ইমেইল-পাসওয়ার্ড দিয়ে লগইন করতে পারবেন।");
+    return;
+  }
+  DATA.staff.pending.push({ id: makeId(), email, password, name: name.trim() });
+  saveState();
+  alert("আপনার অনুরোধ পাঠানো হয়েছে। অ্যাডমিন 'স্টাফ ব্যবস্থাপনা' থেকে অনুমোদন দিলে আপনি এই একই ইমেইল-পাসওয়ার্ড দিয়ে লগইন করে এন্ট্রি দিতে পারবেন।");
 });
 
 function deleteEntry(id){
@@ -942,16 +1033,49 @@ document.getElementById("entryForm").addEventListener("submit", (ev)=>{
 });
 
 /* init */
-applyAdminUI();
-renderYearSelect();
-renderCategorySelect();
-refreshBulkCategoryOptions();
-(function(){
-  const d = new Date();
-  const iso = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
-  document.getElementById("fDate").value = iso;
-})();
-renderAll();
+function startApp(){
+  applyAdminUI();
+  renderYearSelect();
+  renderCategorySelect();
+  refreshBulkCategoryOptions();
+  (function(){
+    const d = new Date();
+    const iso = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    document.getElementById("fDate").value = iso;
+  })();
+  renderAll();
+}
+
+function normalizeData(d){
+  if (!d.customCats) d.customCats = { income: [], expense: [] };
+  if (!d.staff) d.staff = { pending: [], approved: [] };
+  return d;
+}
+
+if (cloudDocRef) {
+  cloudDocRef.get().then(doc => {
+    if (doc.exists) {
+      DATA = normalizeData(doc.data());
+    } else {
+      cloudDocRef.set(DATA);
+    }
+    startApp();
+    cloudDocRef.onSnapshot(snap => {
+      if (suppressCloudEcho) { suppressCloudEcho = false; return; }
+      if (snap.exists) {
+        DATA = normalizeData(snap.data());
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA)); } catch(e){}
+        renderAll();
+        applyAdminUI();
+      }
+    });
+  }).catch(err => {
+    console.error("Firebase load failed, using local data instead", err);
+    startApp();
+  });
+} else {
+  startApp();
+}
 </script>
 </body>
 </html>
