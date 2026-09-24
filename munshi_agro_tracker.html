@@ -41,12 +41,19 @@
   }
   .page-shell { max-width: 1000px; margin: 0 auto; }
   header {
-    background: var(--dark); color: white; padding: 28px 20px 24px;
-    padding-top: calc(28px + env(safe-area-inset-top, 0px));
+    background: var(--dark) center/cover no-repeat;
+    background-image: url('cover.jpg'), linear-gradient(135deg, var(--dark), var(--mid));
+    color: white; padding: 60px 20px 24px; position: relative;
+    padding-top: calc(60px + env(safe-area-inset-top, 0px));
   }
-  header .wrap { max-width: 1000px; margin: 0 auto; padding: 0; }
-  header h1 { margin: 0 0 4px; font-size: 26px; font-weight: 700; }
-  header p { margin: 0; color: var(--soft); font-size: 15px; }
+  header::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.35) 55%, var(--dark) 100%);
+  }
+  header .wrap { max-width: 1000px; margin: 0 auto; padding: 0; position: relative; z-index: 1; }
+  header h1 { margin: 0 0 4px; font-size: 26px; font-weight: 700; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+  header p { margin: 0; color: var(--soft); font-size: 15px; text-shadow: 0 1px 6px rgba(0,0,0,0.5); }
+  @media (max-width: 640px) { header { padding-top: calc(80px + env(safe-area-inset-top, 0px)); } }
 
   .container { max-width: 1000px; margin: 0 auto; padding: 20px 16px 60px; }
 
@@ -159,16 +166,6 @@
   .cat-split h3 { font-size: 15px; margin: 0 0 10px; }
   .cat-split h3.in-h { color: var(--mid); }
   .cat-split h3.ex-h { color: var(--brown); }
-  .cover-banner {
-    height: 190px; width: 100%; background: linear-gradient(135deg, var(--dark), var(--mid)) center/cover no-repeat;
-    background-image: url('cover.jpg'), linear-gradient(135deg, var(--dark), var(--mid));
-    background-size: cover; position: relative; border-radius: 0 0 0 0;
-  }
-  .cover-banner::after {
-    content: ""; position: absolute; inset: 0;
-    background: linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.55));
-  }
-  @media (max-width: 640px) { .cover-banner { height: 130px; } }
   .admin-bar { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
   .staff-btn { background: rgba(255,255,255,0.14); color: white; border: 1px solid rgba(255,255,255,0.35);
     padding: 7px 14px; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 600;
@@ -200,14 +197,11 @@
 </head>
 <body>
 <div class="page-shell">
-<div class="cover-banner" aria-hidden="true"></div>
 <header>
   <div class="wrap">
     <h1>মুন্সী এগ্রো — হিসাব-নিকাশ</h1>
     <p>দৈনন্দিন আয়-ব্যয়ের হিসাব রাখুন, বছরভিত্তিক নিট মুনাফা দেখুন</p>
     <div class="admin-bar">
-      <button class="staff-btn" id="coverBtn" type="button" style="display:none;">🖼️ কভার ফটো যোগ করুন</button>
-      <input type="file" id="coverInput" accept="image/*" style="display:none;">
       <button class="staff-btn" id="staffBtn" type="button">👤 স্টাফ লগইন</button>
       <button class="admin-btn" id="adminBtn" type="button">🔒 অ্যাডমিন লগইন</button>
     </div>
@@ -353,8 +347,15 @@
 
   <div class="card section-panel admin-hidden" id="staffCard" data-panel-id="panelStaff">
     <h2>স্টাফ ব্যবস্থাপনা</h2>
-    <p class="view-note">স্টাফদের ইমেইল দিয়ে জানিয়ে দিন যে তারা "স্টাফ লগইন" বাটনে ক্লিক করে ইমেইল ও একটি পাসওয়ার্ড দিয়ে এক্সেসের অনুরোধ পাঠাতে পারবে। আপনি এখান থেকে অনুমোদন দিলে তারা শুধু <b>এন্ট্রি যোগ</b> করতে পারবে — মুছতে বা অন্য কিছু বদলাতে পারবে না।</p>
-    <h3 style="font-size:15px;margin:16px 0 6px;">অপেক্ষমাণ অনুরোধ</h3>
+    <p class="view-note">স্টাফদের ইমেইল দিয়ে জানিয়ে দিন যে তারা "স্টাফ লগইন" বাটনে ক্লিক করে ইমেইল ও একটি পাসওয়ার্ড দিয়ে এক্সেসের অনুরোধ দিলে একটা কোড পাবে। সেই কোডটা তারা আপনাকে (WhatsApp/Messenger/SMS-এ) পাঠাবে — নিচে সেই কোডটা বসিয়ে "যোগ করুন" চাপলেই তারা এক্সেস পেয়ে যাবে। অনুমোদনের পর তারা শুধু <b>এন্ট্রি যোগ</b> করতে পারবে — মুছতে বা অন্য কিছু বদলাতে পারবে না।</p>
+    <h3 style="font-size:15px;margin:16px 0 6px;">স্টাফের কোড দিয়ে এক্সেস দিন</h3>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px;">
+      <input type="text" id="staffCodeInput" placeholder="স্টাফের কাছ থেকে পাওয়া কোডটি এখানে পেস্ট করুন"
+        style="flex:1; min-width:220px; padding:9px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:13.5px;">
+      <button type="button" id="addStaffCodeBtn"
+        style="border:none;border-radius:8px;padding:9px 18px;background:var(--mid);color:white;font-weight:700;cursor:pointer;font-family:inherit;">যোগ করুন</button>
+    </div>
+    <h3 style="font-size:15px;margin:16px 0 6px;">অপেক্ষমাণ অনুরোধ (একই ডিভাইসে করা হলে)</h3>
     <div id="pendingReqList"><div class="empty" id="pendingEmpty">কোনো অপেক্ষমাণ অনুরোধ নেই।</div></div>
     <h3 style="font-size:15px;margin:20px 0 6px;">অনুমোদিত স্টাফ</h3>
     <div id="approvedReqList"><div class="empty" id="approvedEmpty">এখনো কোনো স্টাফ অনুমোদিত হয়নি।</div></div>
@@ -711,28 +712,6 @@ function saveState(){
   }
 }
 
-function applyCover(){
-  const banner = document.querySelector('.cover-banner');
-  if (DATA.coverPhoto) {
-    banner.style.backgroundImage = `url('${DATA.coverPhoto}')`;
-  } else {
-    banner.style.backgroundImage = '';
-  }
-}
-document.getElementById('coverBtn').addEventListener('click', ()=> document.getElementById('coverInput').click());
-document.getElementById('coverInput').addEventListener('change', (ev)=>{
-  const file = ev.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    DATA.coverPhoto = reader.result;
-    saveState();
-    applyCover();
-    ev.target.value = "";
-  };
-  reader.readAsDataURL(file);
-});
-
 function applyAdminUI(){
   const adminBtn = document.getElementById("adminBtn");
   const staffBtn = document.getElementById("staffBtn");
@@ -749,7 +728,6 @@ function applyAdminUI(){
   staffBtn.textContent = isStaff ? "🔓 স্টাফ মোড (লগআউট)" : "👤 স্টাফ লগইন";
   staffBtn.classList.toggle("is-staff", isStaff);
   staffBtn.style.display = isAdmin ? "none" : "inline-flex";
-  document.getElementById("coverBtn").style.display = isAdmin ? "inline-flex" : "none";
 
   const canEnter = canEnterData();
   entryCard.classList.toggle("admin-hidden", !canEnter);
@@ -833,6 +811,34 @@ function revokeStaff(id){
   renderStaffLists();
 }
 
+document.getElementById("addStaffCodeBtn").addEventListener("click", () => {
+  const input = document.getElementById("staffCodeInput");
+  const raw = input.value.trim();
+  if (!raw) return;
+  let data;
+  try {
+    data = JSON.parse(decodeURIComponent(escape(atob(raw))));
+  } catch (e) {
+    alert("কোডটি সঠিক নয়। স্টাফের কাছ থেকে পুরো কোডটি ঠিকভাবে কপি করে এনেছেন কিনা দেখুন।");
+    return;
+  }
+  if (!data || !data.email || !data.password) {
+    alert("কোডটি সঠিক নয়।");
+    return;
+  }
+  const exists = (DATA.staff.approved || []).find(r => r.email === data.email);
+  if (exists) {
+    alert("এই ইমেইল দিয়ে আগে থেকেই একজন স্টাফ অনুমোদিত আছে।");
+    return;
+  }
+  DATA.staff.approved.push({ id: makeId(), email: data.email, password: data.password, name: data.name || "" });
+  DATA.staff.pending = (DATA.staff.pending || []).filter(r => r.email !== data.email);
+  saveState();
+  input.value = "";
+  renderStaffLists();
+  alert("স্টাফ যোগ হয়ে গেছে। সে এখন এই ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করে এন্ট্রি দিতে পারবে।");
+});
+
 /* ---------- nav card panel switching ---------- */
 document.getElementById("navGrid").addEventListener("click", (ev)=>{
   const btn = ev.target.closest(".nav-card");
@@ -906,13 +912,18 @@ document.getElementById("staffBtn").addEventListener("click", () => {
 
   const alreadyPending = (DATA.staff.pending || []).find(r => r.email === email);
   if (alreadyPending) {
-    alert("আপনার অনুরোধ এখনো অ্যাডমিনের অনুমোদনের অপেক্ষায় আছে। অনুমোদন হলে এই একই ইমেইল-পাসওয়ার্ড দিয়ে লগইন করতে পারবেন।");
+    alert("এই ইমেইল দিয়ে আগেই একটা অনুরোধ তৈরি হয়েছে। আগের কোডটি অ্যাডমিনকে পাঠিয়েছেন কিনা দেখুন, অথবা নতুন করে আবার চেষ্টা করুন।");
     return;
   }
   const name = prompt("আপনার নাম লিখুন (ঐচ্ছিক):") || "";
+  const payload = { email, password, name: name.trim() };
+  const code = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
   DATA.staff.pending.push({ id: makeId(), email, password, name: name.trim() });
   saveState();
-  alert("অনুরোধ পাঠানো হয়েছে। অ্যাডমিন অনুমোদন দিলে এই ইমেইল-পাসওয়ার্ড দিয়ে লগইন করে এন্ট্রি দিতে পারবেন।");
+  prompt(
+    "নিচের কোডটি সম্পূর্ণ কপি করে অ্যাডমিনকে (WhatsApp/Messenger/SMS-এ) পাঠান। অ্যাডমিন এই কোডটি 'স্টাফ ব্যবস্থাপনা' প্যানেলে বসিয়ে আপনাকে এক্সেস দিলে আপনি এই একই ইমেইল-পাসওয়ার্ড দিয়ে লগইন করতে পারবেন:",
+    code
+  );
 });
 
 function deleteEntry(id){
@@ -980,7 +991,6 @@ document.getElementById("entryForm").addEventListener("submit", (ev)=>{
 });
 
 /* init */
-applyCover();
 applyAdminUI();
 renderYearSelect();
 renderCategorySelect();
