@@ -347,17 +347,19 @@
 
   <div class="card section-panel admin-hidden" id="staffCard" data-panel-id="panelStaff">
     <h2>স্টাফ ব্যবস্থাপনা</h2>
-    <p class="view-note">স্টাফদের ইমেইল দিয়ে জানিয়ে দিন যে তারা "স্টাফ লগইন" বাটনে ক্লিক করে ইমেইল ও একটি পাসওয়ার্ড দিয়ে এক্সেসের অনুরোধ দিলে একটা কোড পাবে। সেই কোডটা তারা আপনাকে (WhatsApp/Messenger/SMS-এ) পাঠাবে — নিচে সেই কোডটা বসিয়ে "যোগ করুন" চাপলেই তারা এক্সেস পেয়ে যাবে। অনুমোদনের পর তারা শুধু <b>এন্ট্রি যোগ</b> করতে পারবে — মুছতে বা অন্য কিছু বদলাতে পারবে না।</p>
-    <h3 style="font-size:15px;margin:16px 0 6px;">স্টাফের কোড দিয়ে এক্সেস দিন</h3>
+    <p class="view-note">এটা যেহেতু কোনো সার্ভার-ভিত্তিক সাইট না, তাই স্টাফের অনুরোধ নিজে থেকে এসে এখানে "পেন্ডিং" হিসেবে দেখানো সম্ভব না। বরং স্টাফকে ফোনে/মেসেজে তার নাম, ইমেইল ও একটা পাসওয়ার্ড ঠিক করে আপনাকে জানাতে বলুন — আপনি নিচের ফর্মে সেটা বসিয়ে সরাসরি "যোগ করুন" চাপলেই তার এক্সেস চালু হয়ে যাবে। অনুমোদনের পর সে শুধু <b>এন্ট্রি যোগ</b> করতে পারবে — মুছতে বা অন্য কিছু বদলাতে পারবে না।</p>
+    <h3 style="font-size:15px;margin:16px 0 8px;">নতুন স্টাফ যোগ করুন</h3>
     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px;">
-      <input type="text" id="staffCodeInput" placeholder="স্টাফের কাছ থেকে পাওয়া কোডটি এখানে পেস্ট করুন"
-        style="flex:1; min-width:220px; padding:9px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:13.5px;">
-      <button type="button" id="addStaffCodeBtn"
+      <input type="text" id="staffNameInput" placeholder="নাম"
+        style="flex:1; min-width:120px; padding:9px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:13.5px;">
+      <input type="email" id="staffEmailInput" placeholder="ইমেইল"
+        style="flex:1; min-width:160px; padding:9px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:13.5px;">
+      <input type="text" id="staffPasswordInput" placeholder="পাসওয়ার্ড"
+        style="flex:1; min-width:140px; padding:9px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:13.5px;">
+      <button type="button" id="addStaffDirectBtn"
         style="border:none;border-radius:8px;padding:9px 18px;background:var(--mid);color:white;font-weight:700;cursor:pointer;font-family:inherit;">যোগ করুন</button>
     </div>
-    <h3 style="font-size:15px;margin:16px 0 6px;">অপেক্ষমাণ অনুরোধ (একই ডিভাইসে করা হলে)</h3>
-    <div id="pendingReqList"><div class="empty" id="pendingEmpty">কোনো অপেক্ষমাণ অনুরোধ নেই।</div></div>
-    <h3 style="font-size:15px;margin:20px 0 6px;">অনুমোদিত স্টাফ</h3>
+    <h3 style="font-size:15px;margin:16px 0 6px;">অনুমোদিত স্টাফ</h3>
     <div id="approvedReqList"><div class="empty" id="approvedEmpty">এখনো কোনো স্টাফ অনুমোদিত হয়নি।</div></div>
   </div>
 </div>
@@ -750,29 +752,8 @@ function applyAdminUI(){
 }
 
 function renderStaffLists(){
-  const pendWrap = document.getElementById("pendingReqList");
   const apprWrap = document.getElementById("approvedReqList");
-  const pending = DATA.staff.pending || [];
   const approved = DATA.staff.approved || [];
-
-  pendWrap.innerHTML = "";
-  if (!pending.length) {
-    pendWrap.innerHTML = `<div class="empty">কোনো অপেক্ষমাণ অনুরোধ নেই।</div>`;
-  } else {
-    pending.forEach(r=>{
-      const row = document.createElement("div");
-      row.className = "req-row";
-      row.innerHTML = `
-        <div class="req-info"><b>${r.name || r.email}</b><span>${r.email}</span></div>
-        <div class="req-actions">
-          <button class="approve" data-id="${r.id}">অনুমোদন</button>
-          <button class="reject" data-id="${r.id}">বাতিল</button>
-        </div>`;
-      pendWrap.appendChild(row);
-    });
-    pendWrap.querySelectorAll(".approve").forEach(b=> b.onclick = () => approveStaff(b.dataset.id));
-    pendWrap.querySelectorAll(".reject").forEach(b=> b.onclick = () => rejectStaff(b.dataset.id));
-  }
 
   apprWrap.innerHTML = "";
   if (!approved.length) {
@@ -792,51 +773,33 @@ function renderStaffLists(){
   }
 }
 
-function approveStaff(id){
-  const idx = DATA.staff.pending.findIndex(r=>r.id===id);
-  if (idx === -1) return;
-  const [req] = DATA.staff.pending.splice(idx,1);
-  DATA.staff.approved.push(req);
-  saveState();
-  renderStaffLists();
-}
-function rejectStaff(id){
-  DATA.staff.pending = DATA.staff.pending.filter(r=>r.id!==id);
-  saveState();
-  renderStaffLists();
-}
 function revokeStaff(id){
   DATA.staff.approved = DATA.staff.approved.filter(r=>r.id!==id);
   saveState();
   renderStaffLists();
 }
 
-document.getElementById("addStaffCodeBtn").addEventListener("click", () => {
-  const input = document.getElementById("staffCodeInput");
-  const raw = input.value.trim();
-  if (!raw) return;
-  let data;
-  try {
-    data = JSON.parse(decodeURIComponent(escape(atob(raw))));
-  } catch (e) {
-    alert("কোডটি সঠিক নয়। স্টাফের কাছ থেকে পুরো কোডটি ঠিকভাবে কপি করে এনেছেন কিনা দেখুন।");
+document.getElementById("addStaffDirectBtn").addEventListener("click", () => {
+  const nameInput = document.getElementById("staffNameInput");
+  const emailInput = document.getElementById("staffEmailInput");
+  const passInput = document.getElementById("staffPasswordInput");
+  const name = nameInput.value.trim();
+  const email = emailInput.value.trim().toLowerCase();
+  const password = passInput.value;
+  if (!email || !password) {
+    alert("ইমেইল ও পাসওয়ার্ড দুটোই দিতে হবে।");
     return;
   }
-  if (!data || !data.email || !data.password) {
-    alert("কোডটি সঠিক নয়।");
-    return;
-  }
-  const exists = (DATA.staff.approved || []).find(r => r.email === data.email);
+  const exists = (DATA.staff.approved || []).find(r => r.email === email);
   if (exists) {
     alert("এই ইমেইল দিয়ে আগে থেকেই একজন স্টাফ অনুমোদিত আছে।");
     return;
   }
-  DATA.staff.approved.push({ id: makeId(), email: data.email, password: data.password, name: data.name || "" });
-  DATA.staff.pending = (DATA.staff.pending || []).filter(r => r.email !== data.email);
+  DATA.staff.approved.push({ id: makeId(), email, password, name });
   saveState();
-  input.value = "";
+  nameInput.value = ""; emailInput.value = ""; passInput.value = "";
   renderStaffLists();
-  alert("স্টাফ যোগ হয়ে গেছে। সে এখন এই ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করে এন্ট্রি দিতে পারবে।");
+  alert("স্টাফ যোগ হয়ে গেছে। তাকে এই ইমেইল ও পাসওয়ার্ড জানিয়ে দিন — এটা দিয়ে সে লগইন করে এন্ট্রি দিতে পারবে।");
 });
 
 /* ---------- nav card panel switching ---------- */
@@ -910,20 +873,8 @@ document.getElementById("staffBtn").addEventListener("click", () => {
     return;
   }
 
-  const alreadyPending = (DATA.staff.pending || []).find(r => r.email === email);
-  if (alreadyPending) {
-    alert("এই ইমেইল দিয়ে আগেই একটা অনুরোধ তৈরি হয়েছে। আগের কোডটি অ্যাডমিনকে পাঠিয়েছেন কিনা দেখুন, অথবা নতুন করে আবার চেষ্টা করুন।");
-    return;
-  }
   const name = prompt("আপনার নাম লিখুন (ঐচ্ছিক):") || "";
-  const payload = { email, password, name: name.trim() };
-  const code = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-  DATA.staff.pending.push({ id: makeId(), email, password, name: name.trim() });
-  saveState();
-  prompt(
-    "নিচের কোডটি সম্পূর্ণ কপি করে অ্যাডমিনকে (WhatsApp/Messenger/SMS-এ) পাঠান। অ্যাডমিন এই কোডটি 'স্টাফ ব্যবস্থাপনা' প্যানেলে বসিয়ে আপনাকে এক্সেস দিলে আপনি এই একই ইমেইল-পাসওয়ার্ড দিয়ে লগইন করতে পারবেন:",
-    code
-  );
+  alert("আপনার এক্সেস এখনো তৈরি হয়নি। অ্যাডমিনকে আপনার নাম, ইমেইল ও এই পাসওয়ার্ডটি (ফোনে/মেসেজে) জানিয়ে দিন — তিনি 'স্টাফ ব্যবস্থাপনা' থেকে যোগ করে দিলে আপনি এই একই ইমেইল-পাসওয়ার্ড দিয়ে লগইন করে এন্ট্রি দিতে পারবেন।");
 });
 
 function deleteEntry(id){
