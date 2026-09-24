@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>মুন্সী এগ্রো — হিসাব-নিকাশ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --dark: #1B4332;
+    --green: #2D6A4F;
+    --mid: #40916C;
+    --soft: #D8F3DC;
+    --bg: #F3F8F1;
+    --amber: #F4A300;
+    --amber-soft: #FFF1CC;
+    --brown: #8D5B2B;
+    --text: #1F2D25;
+    --muted: #587065;
+    --white: #FFFFFF;
+    --red: #C8553D;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101A14; --white: #17241C; --text: #E9F2EC; --muted: #9FB6AA; --soft: #1E3327;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101A14; --white: #17241C; --text: #E9F2EC; --muted: #9FB6AA; --soft: #1E3327;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100%;
+  }
+  header {
+    background: var(--dark); color: white; padding: 28px 20px 24px;
+    padding-top: calc(28px + env(safe-area-inset-top, 0px));
+  }
+  header .wrap { max-width: 1000px; margin: 0 auto; }
+  header h1 { margin: 0 0 4px; font-size: 26px; font-weight: 700; }
+  header p { margin: 0; color: var(--soft); font-size: 15px; }
+
+  .container { max-width: 1000px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: -34px 0 20px; position: relative; z-index: 2; }
+  @media (max-width: 640px) { .stats { grid-template-columns: 1fr; margin-top: -24px; } }
+  .stat-card {
+    background: var(--white); border-radius: 14px; padding: 16px 18px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+  }
+  .stat-card .label { font-size: 14px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+  .stat-card .value { font-size: 24px; font-weight: 700; }
+  .stat-card.income .value { color: var(--mid); }
+  .stat-card.expense .value { color: var(--brown); }
+  .stat-card.net { background: var(--amber-soft); }
+  .stat-card.net .value { color: var(--dark); }
+
+  .tabs { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 14px; -webkit-overflow-scrolling: touch; }
+  .tab {
+    flex: 0 0 auto; padding: 8px 16px; border-radius: 999px; background: var(--white);
+    color: var(--muted); font-size: 14px; font-weight: 600; cursor: pointer; border: 1.5px solid transparent;
+    white-space: nowrap;
+  }
+  .tab.active { background: var(--dark); color: white; }
+
+  .card {
+    background: var(--white); border-radius: 16px; padding: 20px; margin-bottom: 18px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  }
+  .card h2 { font-size: 18px; margin: 0 0 14px; color: var(--dark); }
+
+  .chart-bars { display: flex; align-items: flex-end; gap: 10px; height: 160px; padding: 0 4px; overflow-x: auto; }
+  .chart-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 0 0 auto; width: 44px; }
+  .bar-pair { display: flex; align-items: flex-end; gap: 3px; height: 130px; }
+  .bar { width: 16px; border-radius: 4px 4px 0 0; min-height: 2px; }
+  .bar.in { background: var(--mid); }
+  .bar.ex { background: var(--brown); }
+  .chart-col .lbl { font-size: 12px; color: var(--muted); }
+  .legend { display: flex; gap: 16px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  form.entry { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 560px) { form.entry { grid-template-columns: 1fr; } }
+  form.entry .full { grid-column: 1 / -1; }
+  .seg { display: flex; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--soft); }
+  .seg button { flex: 1; padding: 10px; border: none; background: var(--white); color: var(--muted); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .seg button.on.in-c { background: var(--mid); color: white; }
+  .seg button.on.ex-c { background: var(--brown); color: white; }
+  .seg.mode-seg button.on { background: var(--dark); color: white; }
+
+  .bulk-row { display: grid; grid-template-columns: 1.4fr 1fr auto; gap: 8px; align-items: end; margin-bottom: 10px; }
+  @media (max-width: 560px) { .bulk-row { grid-template-columns: 1fr; } }
+  .bulk-row .rm { background: none; border: none; color: var(--red); font-size: 20px; cursor: pointer; padding: 8px; line-height: 1; }
+  .add-row-btn {
+    width: 100%; padding: 10px; border-radius: 10px; border: 1.5px dashed var(--mid);
+    background: transparent; color: var(--mid); font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; margin-bottom: 14px;
+  }
+  .bulk-total { text-align: left; font-size: 14px; color: var(--muted); margin: -2px 0 14px; font-weight: 600; }
+  .bulk-total b { color: var(--dark); }
+  label { font-size: 13px; color: var(--muted); font-weight: 600; display: block; margin-bottom: 5px; }
+  select, input[type=number], input[type=text] {
+    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--soft);
+    font-family: inherit; font-size: 15px; background: var(--bg); color: var(--text);
+  }
+  select:focus, input:focus { outline: 2px solid var(--mid); outline-offset: 1px; }
+  .btn {
+    padding: 12px 18px; border-radius: 10px; border: none; background: var(--dark); color: white;
+    font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%;
+  }
+  .btn:active { opacity: 0.85; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead th { text-align: right; font-size: 12px; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1.5px solid var(--soft); }
+  thead th:first-child, tbody td:first-child { text-align: left; }
+  tbody td { padding: 10px 8px; border-bottom: 1px solid var(--soft); text-align: right; }
+  tbody tr:last-child td { border-bottom: none; }
+  .amt.in { color: var(--mid); font-weight: 700; }
+  .amt.ex { color: var(--brown); font-weight: 700; }
+  .del { background: none; border: none; color: var(--red); cursor: pointer; font-size: 13px; padding: 4px 8px; }
+  .empty { text-align: center; color: var(--muted); padding: 24px 0; font-size: 14px; }
+  .table-wrap { overflow-x: auto; }
+  .cat-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--soft); color: var(--dark); font-size: 12.5px; }
+
+  .admin-bar { display: flex; justify-content: flex-end; margin-top: 14px; }
+  .admin-btn {
+    background: rgba(255,255,255,0.14); color: white; border: 1px solid rgba(255,255,255,0.35);
+    padding: 7px 14px; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .admin-btn:hover { background: rgba(255,255,255,0.24); }
+  .admin-btn.is-admin { background: var(--amber); color: var(--dark); border-color: var(--amber); }
+  .view-note {
+    font-size: 13px; color: var(--muted); background: var(--soft); border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 16px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>মুন্সী এগ্রো — হিসাব-নিকাশ</h1>
+    <p>দৈনন্দিন আয়-ব্যয়ের হিসাব রাখুন, বছরভিত্তিক নিট মুনাফা দেখুন</p>
+    <div class="admin-bar">
+      <button class="admin-btn" id="adminBtn" type="button">🔒 অ্যাডমিন লগইন</button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="stats">
+    <div class="stat-card income">
+      <div class="label">মোট আয়</div>
+      <div class="value" id="statIncome">৳০</div>
+    </div>
+    <div class="stat-card expense">
+      <div class="label">মোট খরচ</div>
+      <div class="value" id="statExpense">৳০</div>
+    </div>
+    <div class="stat-card net">
+      <div class="label">নিট মুনাফা</div>
+      <div class="value" id="statNet">৳০</div>
+    </div>
+  </div>
+
+  <div class="tabs" id="yearTabs"></div>
+
+  <div class="card">
+    <h2>বছরভিত্তিক আয়-ব্যয়</h2>
+    <div class="chart-bars" id="chartBars"></div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--mid)"></i> আয়</span>
+      <span><i class="dot" style="background:var(--brown)"></i> খরচ</span>
+    </div>
+  </div>
+
+  <div class="card" id="entryCard">
+    <h2>নতুন এন্ট্রি যোগ করুন</h2>
+
+    <div class="full" style="margin-bottom:14px;">
+      <label>এন্ট্রির ধরন</label>
+      <div class="seg mode-seg" id="modeSeg">
+        <button type="button" data-mode="single" class="on">একক এন্ট্রি</button>
+        <button type="button" data-mode="bulk">একাধিক এন্ট্রি</button>
+      </div>
+    </div>
+
+    <form class="entry" id="entryForm">
+      <div class="full">
+        <label>ধরন</label>
+        <div class="seg" id="typeSeg">
+          <button type="button" data-type="income" class="on in-c">আয়</button>
+          <button type="button" data-type="expense">খরচ</button>
+        </div>
+      </div>
+      <div>
+        <label>বছর</label>
+        <select id="fYear"></select>
+      </div>
+
+      <!-- একক এন্ট্রি -->
+      <div id="singleFields" class="full" style="display:contents;">
+        <div>
+          <label>ক্যাটাগরি</label>
+          <select id="fCategory"></select>
+        </div>
+        <div class="full">
+          <label>পরিমাণ (টাকা)</label>
+          <input type="number" id="fAmount" min="0" step="1" placeholder="যেমন: ৫০০০০">
+        </div>
+        <div class="full">
+          <label>বিবরণ (ঐচ্ছিক)</label>
+          <input type="text" id="fNote" placeholder="যেমন: গরুর বাছুর বিক্রি">
+        </div>
+      </div>
+
+      <!-- একাধিক এন্ট্রি (বাল্ক) -->
+      <div id="bulkFields" class="full" style="display:none;">
+        <label>খাত ও পরিমাণ (একাধিক)</label>
+        <div id="bulkRows"></div>
+        <button type="button" class="add-row-btn" id="addRowBtn">+ আরেকটি খাত যোগ করুন</button>
+        <div class="bulk-total">মোট: <b id="bulkTotal">৳০</b> (<span id="bulkCount">০</span>টি খাত)</div>
+        <label>সাধারণ বিবরণ (ঐচ্ছিক, সব ক'টি খাতের সাথে যুক্ত হবে)</label>
+        <input type="text" id="fBulkNote" placeholder="যেমন: ৩য় মাসের সব খরচ" style="margin-bottom:14px;">
+      </div>
+
+      <div class="full">
+        <button type="submit" class="btn" id="submitBtn">যোগ করুন</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2 id="entriesTitle">এন্ট্রি তালিকা</h2>
+    <p class="view-note" id="publicNote" style="display:none;">এটি শুধু দেখার জন্য (পাবলিক ভিউ)। এন্ট্রি যোগ বা মুছতে অ্যাডমিন লগইন করুন।</p>
+    <div class="table-wrap">
+      <table id="entriesTable">
+        <thead>
+          <tr><th>বিবরণ</th><th>ক্যাটাগরি</th><th>ধরন</th><th>পরিমাণ</th><th id="actionsHead"></th></tr>
+        </thead>
+        <tbody id="entriesBody"></tbody>
+      </table>
+      <div class="empty" id="emptyMsg" style="display:none;">এখনও কোনো এন্ট্রি নেই। উপরের ফর্ম দিয়ে যোগ করুন।</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- DATA (embedded snapshot, republished on each change) ---------- */
+const SEED_DATA = {"entries": [{"id": "seedi1", "type": "income", "year": "১ম", "category": "পশুপালন", "amount": 175000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi2", "type": "income", "year": "১ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi3", "type": "income", "year": "১ম", "category": "মাছ চাষ", "amount": 120000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi4", "type": "income", "year": "১ম", "category": "লাউ/কুমড়া/ধান", "amount": 120000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi5", "type": "income", "year": "১ম", "category": "শাক-সবজি", "amount": 25000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi6", "type": "income", "year": "১ম", "category": "ফলজ বাগান", "amount": 35000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede7", "type": "expense", "year": "১ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 110000, "note": "পশু ও পোল্ট্রি খাদ্য ও ওষুধ"}, {"id": "seede8", "type": "expense", "year": "১ম", "category": "কৃষি ও সেচ", "amount": 40000, "note": "কৃষি, ফলজ বাগান ও ধান চাষ"}, {"id": "seede9", "type": "expense", "year": "১ম", "category": "মাছ চাষ ও ক্যানেল", "amount": 25000, "note": "মাছ চাষ ও ক্যানেল পরিচর্যা"}, {"id": "seede10", "type": "expense", "year": "১ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 15000, "note": "পরিবহন ও বিদ্যুৎ বিল"}, {"id": "seedi11", "type": "income", "year": "২য়", "category": "পশুপালন", "amount": 236000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi12", "type": "income", "year": "২য়", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi13", "type": "income", "year": "২য়", "category": "মাছ চাষ", "amount": 180000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi14", "type": "income", "year": "২য়", "category": "লাউ/কুমড়া/ধান", "amount": 140000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi15", "type": "income", "year": "২য়", "category": "শাক-সবজি", "amount": 30000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi16", "type": "income", "year": "২য়", "category": "ফলজ বাগান", "amount": 114000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede17", "type": "expense", "year": "২য়", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 90000, "note": "গরু-ছাগলের সম্পূরক খাদ্য ও চিকিৎসা"}, {"id": "seede18", "type": "expense", "year": "২য়", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 40000, "note": "পোল্ট্রি খাবার ও ভ্যাকসিন"}, {"id": "seede19", "type": "expense", "year": "২য়", "category": "কৃষি ও সেচ", "amount": 50000, "note": "সার, বালাইনাশক ও সেচ খরচ"}, {"id": "seede20", "type": "expense", "year": "২য়", "category": "মাছ চাষ ও ক্যানেল", "amount": 30000, "note": "মাছের খাবার ও মাচা মেরামত"}, {"id": "seede21", "type": "expense", "year": "২য়", "category": "কর্মচারীর বেতন", "amount": 144000, "note": "১ জন কর্মচারী (১২,০০০/মাস)"}, {"id": "seedi22", "type": "income", "year": "৩য়", "category": "পশুপালন", "amount": 305000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi23", "type": "income", "year": "৩য়", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi24", "type": "income", "year": "৩য়", "category": "মাছ চাষ", "amount": 220000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi25", "type": "income", "year": "৩য়", "category": "লাউ/কুমড়া/ধান", "amount": 160000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi26", "type": "income", "year": "৩য়", "category": "শাক-সবজি", "amount": 35000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi27", "type": "income", "year": "৩য়", "category": "ফলজ বাগান", "amount": 143000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede28", "type": "expense", "year": "৩য়", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 150000, "note": "পশুপালন ও পোল্ট্রি খাদ্য/ওষুধ"}, {"id": "seede29", "type": "expense", "year": "৩য়", "category": "কৃষি ও সেচ", "amount": 80000, "note": "কৃষি, বাগান ও মৎস্য চাষ খরচ"}, {"id": "seede30", "type": "expense", "year": "৩য়", "category": "পরিবহন ও বিদ্যুৎ", "amount": 10000, "note": "পরিবহন ও রক্ষণাবেক্ষণ"}, {"id": "seede31", "type": "expense", "year": "৩য়", "category": "কর্মচারীর বেতন", "amount": 151200, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}, {"id": "seedi32", "type": "income", "year": "৪র্থ", "category": "পশুপালন", "amount": 366000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi33", "type": "income", "year": "৪র্থ", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi34", "type": "income", "year": "৪র্থ", "category": "মাছ চাষ", "amount": 250000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi35", "type": "income", "year": "৪র্থ", "category": "লাউ/কুমড়া/ধান", "amount": 175000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi36", "type": "income", "year": "৪র্থ", "category": "শাক-সবজি", "amount": 45000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi37", "type": "income", "year": "৪র্থ", "category": "ফলজ বাগান", "amount": 170000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede38", "type": "expense", "year": "৪র্থ", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 175000, "note": "পশুপালন ও পোল্ট্রি খাদ্য/ওষুধ"}, {"id": "seede39", "type": "expense", "year": "৪র্থ", "category": "মাছ চাষ ও ক্যানেল", "amount": 80000, "note": "মাচা সংস্কার, মাছের ফিড ও সার"}, {"id": "seede40", "type": "expense", "year": "৪র্থ", "category": "পরিবহন ও বিদ্যুৎ", "amount": 20000, "note": "পরিবহন ও বিদ্যুৎ বিল"}, {"id": "seede41", "type": "expense", "year": "৪র্থ", "category": "কর্মচারীর বেতন", "amount": 158760, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}, {"id": "seedi42", "type": "income", "year": "৫ম", "category": "পশুপালন", "amount": 435000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi43", "type": "income", "year": "৫ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi44", "type": "income", "year": "৫ম", "category": "মাছ চাষ", "amount": 300000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi45", "type": "income", "year": "৫ম", "category": "লাউ/কুমড়া/ধান", "amount": 190000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi46", "type": "income", "year": "৫ম", "category": "শাক-সবজি", "amount": 50000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi47", "type": "income", "year": "৫ম", "category": "ফলজ বাগান", "amount": 190000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede48", "type": "expense", "year": "৫ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 200000, "note": "পশু ও পোল্ট্রি খাদ্য/চিকিৎসা"}, {"id": "seede49", "type": "expense", "year": "৫ম", "category": "মাছ চাষ ও ক্যানেল", "amount": 95000, "note": "মৎস্য খাদ্য ও বাগান পরিচর্যা"}, {"id": "seede50", "type": "expense", "year": "৫ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 20000, "note": "পরিবহন ও মেরামত"}, {"id": "seede51", "type": "expense", "year": "৫ম", "category": "কর্মচারীর বেতন", "amount": 166696, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}, {"id": "seedi52", "type": "income", "year": "৬ষ্ঠ", "category": "পশুপালন", "amount": 500000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi53", "type": "income", "year": "৬ষ্ঠ", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi54", "type": "income", "year": "৬ষ্ঠ", "category": "মাছ চাষ", "amount": 320000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi55", "type": "income", "year": "৬ষ্ঠ", "category": "লাউ/কুমড়া/ধান", "amount": 200000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi56", "type": "income", "year": "৬ষ্ঠ", "category": "শাক-সবজি", "amount": 60000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi57", "type": "income", "year": "৬ষ্ঠ", "category": "ফলজ বাগান", "amount": 200000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede58", "type": "expense", "year": "৬ষ্ঠ", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 220000, "note": "পশুপালন ও পোল্ট্রি খাদ্য/চিকিৎসা"}, {"id": "seede59", "type": "expense", "year": "৬ষ্ঠ", "category": "কৃষি ও সেচ", "amount": 110000, "note": "বাগান, মাছ চাষ ও সবজি খরচ"}, {"id": "seede60", "type": "expense", "year": "৬ষ্ঠ", "category": "পরিবহন ও বিদ্যুৎ", "amount": 20000, "note": "পরিবহন, বিদ্যুৎ ও অন্যান্য"}, {"id": "seede61", "type": "expense", "year": "৬ষ্ঠ", "category": "কর্মচারীর বেতন", "amount": 175031, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}, {"id": "seedi62", "type": "income", "year": "৭ম", "category": "পশুপালন", "amount": 565000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi63", "type": "income", "year": "৭ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi64", "type": "income", "year": "৭ম", "category": "মাছ চাষ", "amount": 350000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi65", "type": "income", "year": "৭ম", "category": "লাউ/কুমড়া/ধান", "amount": 210000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi66", "type": "income", "year": "৭ম", "category": "শাক-সবজি", "amount": 65000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi67", "type": "income", "year": "৭ম", "category": "ফলজ বাগান", "amount": 210000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede68", "type": "expense", "year": "৭ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 230000, "note": "পশু ও পোল্ট্রি খাদ্য/ওষুধ"}, {"id": "seede69", "type": "expense", "year": "৭ম", "category": "কৃষি ও সেচ", "amount": 120000, "note": "বাগান, মাছ চাষ ও কৃষি খরচ"}, {"id": "seede70", "type": "expense", "year": "৭ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 20000, "note": "পরিবহন ও বিদ্যুৎ খরচ"}, {"id": "seede71", "type": "expense", "year": "৭ম", "category": "কর্মচারীর বেতন", "amount": 183783, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}, {"id": "seedi72", "type": "income", "year": "৮ম", "category": "পশুপালন", "amount": 610000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi73", "type": "income", "year": "৮ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi74", "type": "income", "year": "৮ম", "category": "মাছ চাষ", "amount": 380000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi75", "type": "income", "year": "৮ম", "category": "লাউ/কুমড়া/ধান", "amount": 220000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi76", "type": "income", "year": "৮ম", "category": "শাক-সবজি", "amount": 70000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi77", "type": "income", "year": "৮ম", "category": "ফলজ বাগান", "amount": 220000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede78", "type": "expense", "year": "৮ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 240000, "note": "পশু ও পোল্ট্রি খাদ্য/চিকিৎসা"}, {"id": "seede79", "type": "expense", "year": "৮ম", "category": "কৃষি ও সেচ", "amount": 125000, "note": "কৃষি, মাচা ও মাছের ফিড"}, {"id": "seede80", "type": "expense", "year": "৮ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 25000, "note": "মেরামত ও পরিবহন"}, {"id": "seede81", "type": "expense", "year": "৮ম", "category": "কর্মচারীর বেতন", "amount": 192972, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}, {"id": "seedi82", "type": "income", "year": "৯ম", "category": "পশুপালন", "amount": 630000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi83", "type": "income", "year": "৯ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi84", "type": "income", "year": "৯ম", "category": "মাছ চাষ", "amount": 400000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi85", "type": "income", "year": "৯ম", "category": "লাউ/কুমড়া/ধান", "amount": 230000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi86", "type": "income", "year": "৯ম", "category": "শাক-সবজি", "amount": 75000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi87", "type": "income", "year": "৯ম", "category": "ফলজ বাগান", "amount": 230000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede88", "type": "expense", "year": "৯ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 250000, "note": "পশু ও পোল্ট্রি খাদ্য/ওষুধ"}, {"id": "seede89", "type": "expense", "year": "৯ম", "category": "কৃষি ও সেচ", "amount": 130000, "note": "বাগান ও মৎস্য চাষ খরচ"}, {"id": "seede90", "type": "expense", "year": "৯ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 30000, "note": "পরিবহন ও অন্যান্য পরিচালনা"}, {"id": "seede91", "type": "expense", "year": "৯ম", "category": "কর্মচারীর বেতন", "amount": 202621, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}, {"id": "seedi92", "type": "income", "year": "১০ম", "category": "পশুপালন", "amount": 675000, "note": "গরু ও ছাগলের বাচ্চা বিক্রি"}, {"id": "seedi93", "type": "income", "year": "১০ম", "category": "পোল্ট্রি (ডিম)", "amount": 210000, "note": "হাঁস ও মুরগির ডিম বিক্রি"}, {"id": "seedi94", "type": "income", "year": "১০ম", "category": "মাছ চাষ", "amount": 420000, "note": "ক্যানেলে চাষকৃত মাছ বিক্রি"}, {"id": "seedi95", "type": "income", "year": "১০ম", "category": "লাউ/কুমড়া/ধান", "amount": 240000, "note": "লাউ, মিষ্টি কুমড়া ও ধান বিক্রি"}, {"id": "seedi96", "type": "income", "year": "১০ম", "category": "শাক-সবজি", "amount": 80000, "note": "শিম, বেগুন, পেঁপে ইত্যাদি বিক্রি"}, {"id": "seedi97", "type": "income", "year": "১০ম", "category": "ফলজ বাগান", "amount": 240000, "note": "লেবু, কুল ও পেয়ারা বিক্রি"}, {"id": "seede98", "type": "expense", "year": "১০ম", "category": "পশু ও পোল্ট্রি খাদ্য/ওষুধ", "amount": 260000, "note": "পশু ও পোল্ট্রি খাদ্য/ওষুধ"}, {"id": "seede99", "type": "expense", "year": "১০ম", "category": "কৃষি ও সেচ", "amount": 135000, "note": "বাগান, সেচ ও মাছের ফিড"}, {"id": "seede100", "type": "expense", "year": "১০ম", "category": "পরিবহন ও বিদ্যুৎ", "amount": 35000, "note": "পরিবহন ও ওভারহোলিং খরচ"}, {"id": "seede101", "type": "expense", "year": "১০ম", "category": "কর্মচারীর বেতন", "amount": 212762, "note": "কর্মচারীর বেতন (৫% ইনক্রিমেন্ট)"}]};
+
+const STORAGE_KEY = "munshiAgroData";
+let DATA;
+try {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  DATA = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(SEED_DATA));
+} catch (err) {
+  console.error("localStorage read failed, using seed data", err);
+  DATA = JSON.parse(JSON.stringify(SEED_DATA));
+}
+
+const YEARS = ["১ম","২য়","৩য়","৪র্থ","৫ম","৬ষ্ঠ","৭ম","৮ম","৯ম","১০ম"];
+const CATS = {
+  income: ["পশুপালন","পোল্ট্রি (ডিম)","মাছ চাষ","লাউ/কুমড়া/ধান","শাক-সবজি","ফলজ বাগান","অন্যান্য আয়"],
+  expense: ["পশু ও পোল্ট্রি খাদ্য/ওষুধ","কৃষি ও সেচ","মাছ চাষ ও ক্যানেল","পরিবহন ও বিদ্যুৎ","কর্মচারীর বেতন","অন্যান্য খরচ"]
+};
+
+const bnDigits = "০১২৩৪৫৬৭৮৯";
+function bn(n){ return String(n).replace(/[0-9]/g, d => bnDigits[d]); }
+function grp(n){
+  n = Math.round(n);
+  let s = String(n), last3 = s.slice(-3), rest = s.slice(0,-3);
+  if (rest) rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + ",";
+  return bn(rest + last3);
+}
+function money(n){ return "৳" + grp(n); }
+
+/* ---------- ADMIN ACCESS ----------
+   এটি একটি static (ব্যাকএন্ডবিহীন) ওয়েবসাইট, তাই এই পাসওয়ার্ড শুধু casual
+   দর্শকদের এডিট করা থেকে ঠেকানোর একটা সাধারণ বাধা — সত্যিকারের নিরাপত্তা নয়।
+   কেউ ব্রাউজারের "View Source" বা DevTools থেকে এই পাসওয়ার্ড দেখে ফেলতে পারবে।
+   সংবেদনশীল/গোপন কিছু রক্ষা করার জন্য এর ওপর ভরসা করবেন না।
+   নিচের পাসওয়ার্ডটা বদলে নিজের একটা পাসওয়ার্ড বসিয়ে নিন: */
+const ADMIN_PASSWORD = "munshi2026";
+let isAdmin = localStorage.getItem("munshiIsAdmin") === "true";
+
+let currentYear = "all";
+let currentType = "income";
+let currentMode = "single";
+let bulkRowCount = 0;
+
+function entriesForYear(y){
+  return DATA.entries.filter(e => y === "all" ? true : e.year === y);
+}
+
+function renderStats(){
+  const list = entriesForYear(currentYear);
+  const inc = list.filter(e=>e.type==="income").reduce((a,e)=>a+e.amount,0);
+  const exp = list.filter(e=>e.type==="expense").reduce((a,e)=>a+e.amount,0);
+  document.getElementById("statIncome").textContent = money(inc);
+  document.getElementById("statExpense").textContent = money(exp);
+  document.getElementById("statNet").textContent = money(inc-exp);
+}
+
+function renderTabs(){
+  const wrap = document.getElementById("yearTabs");
+  wrap.innerHTML = "";
+  const allBtn = document.createElement("div");
+  allBtn.className = "tab" + (currentYear==="all" ? " active" : "");
+  allBtn.textContent = "সব বছর";
+  allBtn.onclick = () => { currentYear = "all"; renderAll(); };
+  wrap.appendChild(allBtn);
+  YEARS.forEach(y => {
+    const b = document.createElement("div");
+    b.className = "tab" + (currentYear===y ? " active" : "");
+    b.textContent = y + " বছর";
+    b.onclick = () => { currentYear = y; renderAll(); };
+    wrap.appendChild(b);
+  });
+}
+
+function renderChart(){
+  const wrap = document.getElementById("chartBars");
+  wrap.innerHTML = "";
+  let maxVal = 1;
+  const totals = YEARS.map(y=>{
+    const list = entriesForYear(y);
+    const inc = list.filter(e=>e.type==="income").reduce((a,e)=>a+e.amount,0);
+    const exp = list.filter(e=>e.type==="expense").reduce((a,e)=>a+e.amount,0);
+    maxVal = Math.max(maxVal, inc, exp);
+    return {y, inc, exp};
+  });
+  totals.forEach(t=>{
+    const col = document.createElement("div");
+    col.className = "chart-col";
+    const pair = document.createElement("div");
+    pair.className = "bar-pair";
+    const bi = document.createElement("div");
+    bi.className = "bar in";
+    bi.style.height = Math.max(2, (t.inc/maxVal)*130) + "px";
+    bi.title = "আয়: " + money(t.inc);
+    const be = document.createElement("div");
+    be.className = "bar ex";
+    be.style.height = Math.max(2, (t.exp/maxVal)*130) + "px";
+    be.title = "খরচ: " + money(t.exp);
+    pair.appendChild(bi); pair.appendChild(be);
+    const lbl = document.createElement("div");
+    lbl.className = "lbl";
+    lbl.textContent = t.y;
+    col.appendChild(pair); col.appendChild(lbl);
+    wrap.appendChild(col);
+  });
+}
+
+function renderYearSelect(){
+  const sel = document.getElementById("fYear");
+  sel.innerHTML = YEARS.map(y => `<option value="${y}">${y} বছর</option>`).join("");
+  sel.value = currentYear !== "all" ? currentYear : YEARS[0];
+}
+
+function renderCategorySelect(){
+  const sel = document.getElementById("fCategory");
+  sel.innerHTML = CATS[currentType].map(c => `<option value="${c}">${c}</option>`).join("");
+}
+
+function makeBulkRow(){
+  bulkRowCount++;
+  const id = "br" + bulkRowCount;
+  const row = document.createElement("div");
+  row.className = "bulk-row";
+  row.dataset.rowId = id;
+  row.innerHTML = `
+    <div>
+      <label>খাত</label>
+      <select class="bulkCat">${CATS[currentType].map(c => `<option value="${c}">${c}</option>`).join("")}</select>
+    </div>
+    <div>
+      <label>পরিমাণ (টাকা)</label>
+      <input type="number" class="bulkAmt" min="0" step="1" placeholder="যেমন: ৫০০০০">
+    </div>
+    <button type="button" class="rm" title="মুছুন">×</button>
+  `;
+  row.querySelector(".rm").onclick = () => { row.remove(); updateBulkTotal(); };
+  row.querySelector(".bulkAmt").addEventListener("input", updateBulkTotal);
+  return row;
+}
+
+function addBulkRow(){
+  document.getElementById("bulkRows").appendChild(makeBulkRow());
+  updateBulkTotal();
+}
+
+function resetBulkRows(){
+  const wrap = document.getElementById("bulkRows");
+  wrap.innerHTML = "";
+  wrap.appendChild(makeBulkRow());
+  wrap.appendChild(makeBulkRow());
+  updateBulkTotal();
+}
+
+function refreshBulkCategoryOptions(){
+  document.querySelectorAll("#bulkRows .bulkCat").forEach(sel=>{
+    const prev = sel.value;
+    sel.innerHTML = CATS[currentType].map(c => `<option value="${c}">${c}</option>`).join("");
+    if (CATS[currentType].includes(prev)) sel.value = prev;
+  });
+}
+
+function updateBulkTotal(){
+  const rows = Array.from(document.querySelectorAll("#bulkRows .bulk-row"));
+  let total = 0, count = 0;
+  rows.forEach(r=>{
+    const amt = parseFloat(r.querySelector(".bulkAmt").value);
+    if (amt > 0) { total += amt; count++; }
+  });
+  document.getElementById("bulkTotal").textContent = money(total);
+  document.getElementById("bulkCount").textContent = bn(count);
+}
+
+function renderTable(){
+  const body = document.getElementById("entriesBody");
+  const list = entriesForYear(currentYear).slice().reverse();
+  body.innerHTML = "";
+  document.getElementById("entriesTitle").textContent =
+    currentYear === "all" ? "সব এন্ট্রি" : (currentYear + " বছরের এন্ট্রি");
+  document.getElementById("emptyMsg").style.display = list.length ? "none" : "block";
+  list.forEach(e => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${e.note ? e.note : "—"}<div style="font-size:12px;color:var(--muted)">${e.year} বছর</div></td>
+      <td><span class="cat-pill">${e.category}</span></td>
+      <td>${e.type === "income" ? "আয়" : "খরচ"}</td>
+      <td class="amt ${e.type==='income'?'in':'ex'}">${money(e.amount)}</td>
+      <td>${isAdmin ? `<button class="del" data-id="${e.id}">মুছুন</button>` : ""}</td>
+    `;
+    body.appendChild(tr);
+  });
+  if (isAdmin) {
+    body.querySelectorAll(".del").forEach(btn=>{
+      btn.onclick = () => deleteEntry(btn.dataset.id);
+    });
+  }
+}
+
+function renderAll(){
+  renderTabs();
+  renderStats();
+  renderChart();
+  renderTable();
+}
+
+document.getElementById("typeSeg").addEventListener("click", (ev)=>{
+  const btn = ev.target.closest("button");
+  if(!btn) return;
+  currentType = btn.dataset.type;
+  document.querySelectorAll("#typeSeg button").forEach(b=>{
+    b.classList.remove("on");
+    if (b.dataset.type === currentType) b.classList.add("on");
+  });
+  document.querySelectorAll("#typeSeg button").forEach(b=>{
+    b.classList.remove("in-c","ex-c");
+    if (b.dataset.type === "income") b.classList.add("in-c");
+    if (b.dataset.type === "expense") b.classList.add("ex-c");
+  });
+  renderCategorySelect();
+  refreshBulkCategoryOptions();
+});
+
+document.getElementById("modeSeg").addEventListener("click", (ev)=>{
+  const btn = ev.target.closest("button");
+  if(!btn) return;
+  currentMode = btn.dataset.mode;
+  document.querySelectorAll("#modeSeg button").forEach(b=>{
+    b.classList.remove("on");
+    if (b.dataset.mode === currentMode) b.classList.add("on");
+  });
+  const single = currentMode === "single";
+  document.getElementById("singleFields").style.display = single ? "contents" : "none";
+  document.getElementById("bulkFields").style.display = single ? "none" : "block";
+  document.getElementById("submitBtn").textContent = single ? "যোগ করুন" : "সবগুলো যোগ করুন";
+  if (!single && document.getElementById("bulkRows").children.length === 0) {
+    resetBulkRows();
+  }
+});
+
+document.getElementById("addRowBtn").addEventListener("click", addBulkRow);
+
+function saveState(){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
+  } catch (err) {
+    console.error("localStorage save failed", err);
+    alert("দুঃখিত, ব্রাউজারে সেভ করা যায়নি। আপনার ব্রাউজারে স্টোরেজ বন্ধ থাকতে পারে।");
+  }
+}
+
+function applyAdminUI(){
+  const adminBtn = document.getElementById("adminBtn");
+  const entryCard = document.getElementById("entryCard");
+  const publicNote = document.getElementById("publicNote");
+  const actionsHead = document.getElementById("actionsHead");
+
+  adminBtn.textContent = isAdmin ? "🔓 অ্যাডমিন মোড (লগআউট)" : "🔒 অ্যাডমিন লগইন";
+  adminBtn.classList.toggle("is-admin", isAdmin);
+  entryCard.style.display = isAdmin ? "block" : "none";
+  publicNote.style.display = isAdmin ? "none" : "block";
+  actionsHead.textContent = "";
+}
+
+document.getElementById("adminBtn").addEventListener("click", () => {
+  if (isAdmin) {
+    const ok = confirm("অ্যাডমিন মোড থেকে বের হয়ে পাবলিক (শুধু-দেখা) ভিউতে যেতে চান?");
+    if (!ok) return;
+    isAdmin = false;
+    localStorage.setItem("munshiIsAdmin", "false");
+  } else {
+    const pass = prompt("অ্যাডমিন পাসওয়ার্ড দিন:");
+    if (pass === null) return;
+    if (pass === ADMIN_PASSWORD) {
+      isAdmin = true;
+      localStorage.setItem("munshiIsAdmin", "true");
+    } else {
+      alert("পাসওয়ার্ড ভুল হয়েছে।");
+      return;
+    }
+  }
+  applyAdminUI();
+  renderAll();
+});
+
+function deleteEntry(id){
+  if (!isAdmin) return;
+  DATA.entries = DATA.entries.filter(e => e.id !== id);
+  renderAll();
+  saveState();
+}
+
+function makeId(){
+  return "e" + Date.now() + Math.random().toString(36).slice(2,7);
+}
+
+document.getElementById("entryForm").addEventListener("submit", (ev)=>{
+  ev.preventDefault();
+  if (!isAdmin) return;
+  const year = document.getElementById("fYear").value;
+
+  if (currentMode === "single") {
+    const amount = parseFloat(document.getElementById("fAmount").value);
+    if (!amount || amount <= 0) return;
+    DATA.entries.push({
+      id: makeId(),
+      type: currentType,
+      year: year,
+      category: document.getElementById("fCategory").value,
+      amount: amount,
+      note: document.getElementById("fNote").value.trim()
+    });
+    document.getElementById("fAmount").value = "";
+    document.getElementById("fNote").value = "";
+  } else {
+    const note = document.getElementById("fBulkNote").value.trim();
+    const rows = Array.from(document.querySelectorAll("#bulkRows .bulk-row"));
+    let added = 0;
+    rows.forEach(r=>{
+      const amount = parseFloat(r.querySelector(".bulkAmt").value);
+      const category = r.querySelector(".bulkCat").value;
+      if (amount > 0) {
+        DATA.entries.push({
+          id: makeId(),
+          type: currentType,
+          year: year,
+          category: category,
+          amount: amount,
+          note: note
+        });
+        added++;
+      }
+    });
+    if (added === 0) return;
+    document.getElementById("fBulkNote").value = "";
+    resetBulkRows();
+  }
+
+  renderAll();
+  saveState();
+});
+
+/* init */
+applyAdminUI();
+renderYearSelect();
+renderCategorySelect();
+renderAll();
+</script>
+</body>
+</html>
