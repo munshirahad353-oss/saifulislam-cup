@@ -4,17 +4,19 @@
    =========================================================== */
 
 :root {
-  --soil: #2E2115;
-  --soil-soft: #4A3826;
-  --paddy: #3F6B3F;
-  --paddy-deep: #2A4A2A;
-  --water: #2D6E86;
-  --harvest: #C97B3D;
-  --harvest-deep: #A85C2E;
-  --husk: #F1EADA;
-  --husk-deep: #E7DCC3;
-  --ink: #241C14;
-  --ink-soft: #5B5142;
+  /* ---- agro-tracker paddy-green palette ---- */
+  --soil: #1B4332;
+  --soil-soft: #2D6A4F;
+  --paddy: #40916C;
+  --paddy-deep: #2D6A4F;
+  --water: #2D6A4F;
+  --harvest: #F4A300;
+  --harvest-deep: #8D5B2B;
+  --harvest-soft: #FFF1CC;
+  --husk: #F3F8F1;
+  --husk-deep: #D8F3DC;
+  --ink: #1F2D25;
+  --ink-soft: #587065;
   --white: #FFFFFF;
 
   --serif: 'Tiro Bangla', 'Noto Serif Bengali', Georgia, serif;
@@ -52,7 +54,7 @@ h1, h2, h3 {
   font-weight: 400;
 }
 
-h1 { font-size: clamp(32px, 5vw, 52px); }
+h1 { font-size: clamp(32px, 5vw, 54px); letter-spacing: -0.01em; }
 h2 { font-size: clamp(26px, 3.4vw, 36px); margin-bottom: 28px; }
 h3 { font-size: 21px; }
 
@@ -76,7 +78,7 @@ a:focus-visible, button:focus-visible {
     100deg,
     transparent 0,
     transparent 92px,
-    rgba(63, 107, 63, 0.08) 93px,
+    rgba(64, 145, 108, 0.10) 93px,
     transparent 94px
   );
 }
@@ -333,6 +335,77 @@ a:focus-visible, button:focus-visible {
   font-weight: 600;
 }
 
+/* ---------- hero visual (vector illustration) ---------- */
+.hero-visual {
+  position: relative;
+  animation: rise 0.8s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hero-visual svg { width: 100%; height: auto; display: block; }
+.hero-visual .stalk { stroke: var(--paddy); }
+.hero-visual .stalk-deep { stroke: var(--soil); }
+.hero-visual .grain { fill: var(--harvest); }
+.hero-visual .water-line { stroke: var(--water); opacity: 0.5; }
+
+@media (max-width: 860px) {
+  .hero-visual { max-width: 320px; margin: 0 auto; }
+}
+
+/* ---------- availability badge ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--soil-soft);
+  background: var(--husk-deep);
+  border-radius: 999px;
+  padding: 6px 14px 6px 10px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+.badge .dot-live {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--paddy);
+  box-shadow: 0 0 0 3px rgba(64,145,108,0.25);
+}
+
+/* ---------- focus item icon ---------- */
+.focus-item .focus-icon {
+  width: 30px; height: 30px;
+  margin-bottom: 10px;
+  color: var(--harvest-deep);
+}
+.focus-item .focus-icon svg { width: 100%; height: 100%; }
+
+/* ---------- project meta chips ---------- */
+.project-meta {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin: 14px 0 4px;
+}
+.project-meta span {
+  font-size: 12.5px; font-weight: 600;
+  color: var(--soil-soft);
+  background: var(--husk-deep);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+.project-icon {
+  width: 34px; height: 34px;
+  color: var(--paddy);
+  margin-bottom: 14px;
+}
+.project-icon svg { width: 100%; height: 100%; }
+
+/* ---------- section divider (paddy row motif) ---------- */
+.divider {
+  width: 100%;
+  height: 22px;
+  margin: 0 auto;
+  color: var(--paddy);
+  opacity: 0.55;
+}
+.divider svg { width: 100%; height: 100%; display: block; }
+
 /* ---------- footer ---------- */
 .site-footer {
   background: var(--soil);
@@ -344,3 +417,11 @@ a:focus-visible, button:focus-visible {
   font-size: 13.5px;
   opacity: 0.85;
 }
+.site-footer .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.site-footer a { color: var(--husk-deep); text-decoration: underline; text-underline-offset: 3px; }
