@@ -49,14 +49,17 @@
 
   .container { max-width: 1000px; margin: 0 auto; padding: 20px 16px 60px; }
 
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: -34px 0 20px; position: relative; z-index: 2; }
-  @media (max-width: 640px) { .stats { grid-template-columns: 1fr; margin-top: -24px; } }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: -34px 0 20px; position: relative; z-index: 2; }
+  @media (max-width: 640px) { .stats { gap: 7px; margin-top: -24px; } .stat-card { padding: 10px 8px; border-radius: 12px; } .stat-card .label { font-size: 11px; margin-bottom: 3px; } .stat-card .value { font-size: 18px; } }
   .stat-card {
     background: var(--white); border-radius: 14px; padding: 16px 18px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.10); border-top: 3px solid transparent;
   }
-  .stat-card .label { font-size: 14px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
-  .stat-card .value { font-size: 24px; font-weight: 700; }
+  .stat-card.income { border-top-color: var(--mid); }
+  .stat-card.expense { border-top-color: var(--brown); }
+  .stat-card.net { border-top-color: var(--amber); }
+  .stat-card .label { font-size: 14.5px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+  .stat-card .value { font-size: 32px; font-weight: 800; letter-spacing: -0.01em; }
   .stat-card.income .value { color: var(--mid); }
   .stat-card.expense .value { color: var(--brown); }
   .stat-card.net { background: var(--amber-soft); }
@@ -130,6 +133,31 @@
   .table-wrap { overflow-x: auto; }
   .cat-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--soft); color: var(--dark); font-size: 12.5px; }
 
+  .nav-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 720px) { .nav-grid { grid-template-columns: repeat(2, 1fr); } }
+  .nav-card {
+    background: var(--white); border-radius: 14px; padding: 18px 14px; text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07); border: 1.5px solid transparent;
+    cursor: pointer; font-family: inherit; color: var(--text); display: flex; flex-direction: column;
+    align-items: center; gap: 8px; transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  }
+  .nav-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+  .nav-card .nav-icon {
+    font-size: 22px; line-height: 1; width: 44px; height: 44px; border-radius: 50%;
+    background: var(--soft); display: flex; align-items: center; justify-content: center;
+  }
+  .nav-card .nav-label { font-size: 13.5px; font-weight: 700; color: var(--dark); }
+  .nav-card.active { border-color: var(--mid); background: var(--soft); }
+  .nav-card.active .nav-icon { background: var(--white); }
+  .section-panel { display: none; }
+  .section-panel.open { display: block; }
+  .section-panel.admin-hidden { display: none !important; }
+  .nav-card.admin-hidden { display: none !important; }
+  .cat-split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 640px) { .cat-split { grid-template-columns: 1fr; } }
+  .cat-split h3 { font-size: 15px; margin: 0 0 10px; }
+  .cat-split h3.in-h { color: var(--mid); }
+  .cat-split h3.ex-h { color: var(--brown); }
   .admin-bar { display: flex; justify-content: flex-end; margin-top: 14px; }
   .admin-btn {
     background: rgba(255,255,255,0.14); color: white; border: 1px solid rgba(255,255,255,0.35);
@@ -173,27 +201,14 @@
 
   <div class="tabs" id="yearTabs"></div>
 
-  <div class="card">
-    <h2>বছরভিত্তিক আয়-ব্যয়</h2>
-    <div class="chart-bars" id="chartBars"></div>
-    <div class="legend">
-      <span><i class="dot" style="background:var(--mid)"></i> আয়</span>
-      <span><i class="dot" style="background:var(--brown)"></i> খরচ</span>
-    </div>
+  <div class="nav-grid" id="navGrid">
+    <button type="button" class="nav-card" data-panel="panelEntry"><span class="nav-icon">➕</span><span class="nav-label">এন্ট্রি</span></button>
+    <button type="button" class="nav-card" data-panel="panelSummary"><span class="nav-icon">📊</span><span class="nav-label">খাতভিত্তিক সারাংশ</span></button>
+    <button type="button" class="nav-card" data-panel="panelChart"><span class="nav-icon">📈</span><span class="nav-label">বছরভিত্তিক আয়-ব্যয়</span></button>
+    <button type="button" class="nav-card" data-panel="panelTable"><span class="nav-icon">🧾</span><span class="nav-label">সব এন্ট্রি</span></button>
   </div>
 
-  <div class="card">
-    <h2>খাতভিত্তিক সারাংশ</h2>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>খাত</th><th>ধরন</th><th>মোট টাকা</th></tr></thead>
-        <tbody id="catSummaryBody"></tbody>
-      </table>
-      <div class="empty" id="catSummaryEmpty" style="display:none;">এই নির্বাচনে কোনো এন্ট্রি নেই।</div>
-    </div>
-  </div>
-
-  <div class="card" id="entryCard">
+  <div class="card section-panel" id="entryCard" data-panel-id="panelEntry">
     <h2>নতুন এন্ট্রি যোগ করুন</h2>
 
     <div class="full" style="margin-bottom:14px;">
@@ -255,7 +270,42 @@
     </form>
   </div>
 
-  <div class="card">
+  <div class="card section-panel" id="summaryCard" data-panel-id="panelSummary">
+    <h2>খাতভিত্তিক সারাংশ</h2>
+    <div class="cat-split">
+      <div>
+        <h3 class="in-h">আয়ের খাত</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>খাত</th><th>মোট টাকা</th></tr></thead>
+            <tbody id="catSummaryIncomeBody"></tbody>
+          </table>
+          <div class="empty" id="catSummaryIncomeEmpty" style="display:none;">আয়ের কোনো এন্ট্রি নেই।</div>
+        </div>
+      </div>
+      <div>
+        <h3 class="ex-h">ব্যয়ের খাত</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>খাত</th><th>মোট টাকা</th></tr></thead>
+            <tbody id="catSummaryExpenseBody"></tbody>
+          </table>
+          <div class="empty" id="catSummaryExpenseEmpty" style="display:none;">খরচের কোনো এন্ট্রি নেই।</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card section-panel" id="chartCard" data-panel-id="panelChart">
+    <h2>বছরভিত্তিক আয়-ব্যয়</h2>
+    <div class="chart-bars" id="chartBars"></div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--mid)"></i> আয়</span>
+      <span><i class="dot" style="background:var(--brown)"></i> খরচ</span>
+    </div>
+  </div>
+
+  <div class="card section-panel" id="tableCard" data-panel-id="panelTable">
     <h2 id="entriesTitle">এন্ট্রি তালিকা</h2>
     <p class="view-note" id="publicNote" style="display:none;">এটি শুধু দেখার জন্য (পাবলিক ভিউ)। এন্ট্রি যোগ বা মুছতে অ্যাডমিন লগইন করুন।</p>
     <div class="table-wrap">
@@ -361,15 +411,28 @@ function renderTabs(){
   const allBtn = document.createElement("div");
   allBtn.className = "tab" + (currentYear==="all" ? " active" : "");
   allBtn.textContent = "সব বছর";
-  allBtn.onclick = () => { currentYear = "all"; renderAll(); };
+  allBtn.onclick = () => { currentYear = "all"; renderAll(); openYearDetails(); };
   wrap.appendChild(allBtn);
   YEARS.forEach(y => {
     const b = document.createElement("div");
     b.className = "tab" + (currentYear===y ? " active" : "");
     b.textContent = y + " বছর";
-    b.onclick = () => { currentYear = y; renderAll(); };
+    b.onclick = () => { currentYear = y; renderAll(); openYearDetails(); };
     wrap.appendChild(b);
   });
+}
+
+function openYearDetails(){
+  const panels = document.querySelectorAll(".section-panel");
+  const navCards = document.querySelectorAll(".nav-card");
+  panels.forEach(p => p.classList.remove("open"));
+  navCards.forEach(b => b.classList.remove("active"));
+  ["panelSummary","panelChart","panelTable"].forEach(id=>{
+    const el = document.querySelector(`[data-panel-id="${id}"]`);
+    if (el) el.classList.add("open");
+  });
+  const summaryPanel = document.querySelector('[data-panel-id="panelSummary"]');
+  if (summaryPanel) summaryPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderChart(){
@@ -500,30 +563,33 @@ function renderTable(){
   }
 }
 
-function renderCatSummary(){
-  const body = document.getElementById("catSummaryBody");
-  const list = entriesForYear(currentYear);
+function renderCatSummaryFor(type){
+  const bodyId = type === "income" ? "catSummaryIncomeBody" : "catSummaryExpenseBody";
+  const emptyId = type === "income" ? "catSummaryIncomeEmpty" : "catSummaryExpenseEmpty";
+  const body = document.getElementById(bodyId);
+  const list = entriesForYear(currentYear).filter(e => e.type === type);
   const totals = {};
   list.forEach(e=>{
-    const key = e.type + "||" + e.category;
-    totals[key] = (totals[key] || 0) + e.amount;
+    totals[e.category] = (totals[e.category] || 0) + e.amount;
   });
-  const rows = Object.keys(totals).map(key=>{
-    const [type, category] = key.split("||");
-    return { type, category, amount: totals[key] };
-  }).sort((a,b)=> b.amount - a.amount);
+  const rows = Object.keys(totals).map(category=>({ category, amount: totals[category] }))
+    .sort((a,b)=> b.amount - a.amount);
 
   body.innerHTML = "";
-  document.getElementById("catSummaryEmpty").style.display = rows.length ? "none" : "block";
+  document.getElementById(emptyId).style.display = rows.length ? "none" : "block";
   rows.forEach(r=>{
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><span class="cat-pill">${r.category}</span></td>
-      <td>${r.type === "income" ? "আয়" : "খরচ"}</td>
-      <td class="amt ${r.type==='income'?'in':'ex'}">${money(r.amount)}</td>
+      <td class="amt ${type==='income'?'in':'ex'}">${money(r.amount)}</td>
     `;
     body.appendChild(tr);
   });
+}
+
+function renderCatSummary(){
+  renderCatSummaryFor("income");
+  renderCatSummaryFor("expense");
 }
 
 function renderAll(){
@@ -582,15 +648,40 @@ function saveState(){
 function applyAdminUI(){
   const adminBtn = document.getElementById("adminBtn");
   const entryCard = document.getElementById("entryCard");
+  const entryNavCard = document.querySelector('.nav-card[data-panel="panelEntry"]');
   const publicNote = document.getElementById("publicNote");
   const actionsHead = document.getElementById("actionsHead");
 
   adminBtn.textContent = isAdmin ? "🔓 অ্যাডমিন মোড (লগআউট)" : "🔒 অ্যাডমিন লগইন";
   adminBtn.classList.toggle("is-admin", isAdmin);
-  entryCard.style.display = isAdmin ? "block" : "none";
+  entryCard.classList.toggle("admin-hidden", !isAdmin);
+  if (entryNavCard) entryNavCard.classList.toggle("admin-hidden", !isAdmin);
+  if (!isAdmin && entryCard.classList.contains("open")) {
+    entryCard.classList.remove("open");
+    if (entryNavCard) entryNavCard.classList.remove("active");
+  }
   publicNote.style.display = isAdmin ? "none" : "block";
   actionsHead.textContent = "";
 }
+
+/* ---------- nav card panel switching ---------- */
+document.getElementById("navGrid").addEventListener("click", (ev)=>{
+  const btn = ev.target.closest(".nav-card");
+  if (!btn) return;
+  const targetId = btn.dataset.panel;
+  const panels = document.querySelectorAll(".section-panel");
+  const navCards = document.querySelectorAll(".nav-card");
+  const targetPanel = document.querySelector(`[data-panel-id="${targetId}"]`);
+  if (!targetPanel) return;
+  const alreadyOpen = targetPanel.classList.contains("open");
+  panels.forEach(p => p.classList.remove("open"));
+  navCards.forEach(b => b.classList.remove("active"));
+  if (!alreadyOpen) {
+    targetPanel.classList.add("open");
+    btn.classList.add("active");
+    targetPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+});
 
 document.getElementById("adminBtn").addEventListener("click", () => {
   if (isAdmin) {
