@@ -288,6 +288,77 @@ a:focus-visible, button:focus-visible {
 .fn-label { color: var(--ink-soft); flex: 0 0 auto; }
 .fn-value { color: var(--soil); font-weight: 600; text-align: right; }
 
+/* field notes, relocated below the accordion — styled as its own card */
+.field-notes-block {
+  max-width: 620px;
+  background: var(--white);
+  border: 1px solid rgba(46,33,21,0.12);
+  border-radius: 12px;
+  padding: 8px 24px;
+  border-top: none;
+}
+.field-notes-block li:last-child { border-bottom: none; }
+
+/* ---------- hero tracker (replaces the old field-notes spot) ---------- */
+.hero-tracker {
+  animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.08s;
+}
+.hero-tracker .tracker-col-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--soil-soft);
+  margin: 0 0 8px;
+}
+.hero-tracker .tracker-frame {
+  height: 640px;
+}
+@media (max-width: 860px) {
+  .hero-tracker .tracker-frame { height: 560px; }
+}
+
+/* ---------- accordion (About / Focus / Projects / Contact) ---------- */
+.accordion { margin-bottom: 44px; }
+.accordion-item {
+  border-bottom: 1px solid rgba(46,33,21,0.15);
+}
+.accordion-item:first-child {
+  border-top: 1px solid rgba(46,33,21,0.15);
+}
+.accordion-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 20px 2px;
+  font-family: var(--serif);
+  font-size: 21px;
+  color: var(--soil);
+  font-weight: 400;
+  text-align: left;
+}
+.accordion-header:hover { color: var(--paddy-deep); }
+.accordion-icon {
+  font-family: var(--sans);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--paddy);
+  transition: transform 0.2s ease;
+  flex: 0 0 auto;
+}
+.accordion-item.open .accordion-icon { transform: rotate(45deg); }
+.accordion-panel {
+  display: none;
+  padding: 0 2px 30px;
+  animation: rise 0.3s ease both;
+}
+.accordion-item.open .accordion-panel { display: block; }
+.accordion-panel h3:first-child { margin-top: 0; }
+
 /* ---------- generic sections ---------- */
 .section {
   position: relative;

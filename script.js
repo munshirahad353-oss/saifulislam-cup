@@ -47,41 +47,58 @@
     });
   }
 
-  // ---------- Dashboard tabs (About / Focus / Projects / Contact) ----------
-  var dashTabs = Array.prototype.slice.call(document.querySelectorAll(".dash-tab"));
-  var tabPanels = Array.prototype.slice.call(document.querySelectorAll(".tab-panel"));
+  // ---------- Info accordion (About / Focus / Projects / Contact) ----------
+  var accordionItems = Array.prototype.slice.call(document.querySelectorAll(".accordion-item"));
   var navLinks = Array.prototype.slice.call(document.querySelectorAll("a[data-nav]"));
 
-  function activateTab(name) {
-    dashTabs.forEach(function (btn) {
-      var isMatch = btn.getAttribute("data-tab") === name;
-      btn.classList.toggle("active", isMatch);
-      btn.setAttribute("aria-selected", isMatch ? "true" : "false");
-    });
-    tabPanels.forEach(function (panel) {
-      panel.classList.toggle("active", panel.getAttribute("data-panel") === name);
+  function setItemOpen(item, open) {
+    item.classList.toggle("open", open);
+    var header = item.querySelector(".accordion-header");
+    if (header) header.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  // Opens the given section and closes the others (classic FAQ-style accordion).
+  function openAccordion(name) {
+    accordionItems.forEach(function (item) {
+      setItemOpen(item, item.getAttribute("data-acc") === name);
     });
     navLinks.forEach(function (link) {
       link.classList.toggle("active", link.getAttribute("href") === "#" + name);
     });
   }
 
-  dashTabs.forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      activateTab(btn.getAttribute("data-tab"));
-    });
+  // Clicking an open section's own header closes it; clicking a closed
+  // section opens it (and closes whichever other section was open).
+  function toggleAccordion(name) {
+    var item = accordionItems.filter(function (i) { return i.getAttribute("data-acc") === name; })[0];
+    if (item && item.classList.contains("open")) {
+      setItemOpen(item, false);
+      navLinks.forEach(function (link) {
+        if (link.getAttribute("href") === "#" + name) link.classList.remove("active");
+      });
+    } else {
+      openAccordion(name);
+    }
+  }
+
+  accordionItems.forEach(function (item) {
+    var header = item.querySelector(".accordion-header");
+    if (header) {
+      header.addEventListener("click", function () {
+        toggleAccordion(item.getAttribute("data-acc"));
+      });
+    }
   });
 
-  // Header nav links (About/Focus/Projects/Contact) switch the matching
-  // tab and scroll the dashboard section into view, rather than jumping
-  // to a hidden panel directly.
+  // Header nav links (About/Focus/Projects/Contact) open the matching
+  // accordion section and scroll the dashboard section into view.
   navLinks.forEach(function (link) {
     link.addEventListener("click", function (e) {
       var name = link.getAttribute("href").replace("#", "");
-      var hasTab = dashTabs.some(function (btn) { return btn.getAttribute("data-tab") === name; });
-      if (hasTab) {
+      var hasAcc = accordionItems.some(function (item) { return item.getAttribute("data-acc") === name; });
+      if (hasAcc) {
         e.preventDefault();
-        activateTab(name);
+        openAccordion(name);
         var dashboard = document.getElementById("dashboard");
         if (dashboard) dashboard.scrollIntoView({ behavior: "smooth", block: "start" });
         if (siteNav && siteNav.classList.contains("open")) {
