@@ -414,6 +414,8 @@
 
   <div class="card section-panel admin-hidden" id="investorAdminCard" data-panel-id="panelInvestors">
     <h2>ইনভেস্টর</h2>
+    <h3 style="font-size:15px;margin:0 0 8px;">অপেক্ষমাণ অনুরোধ</h3>
+    <div id="investorPendingList" style="margin-bottom:20px;"><div class="empty">কোনো অপেক্ষমাণ ইনভেস্টর অনুরোধ নেই।</div></div>
     <div class="stats" style="margin-top:0;">
       <div class="stat-card income">
         <div class="label">মোট ইনভেস্টর</div>
@@ -537,7 +539,8 @@ const CATS = {
 /* ব্যবহারকারী নতুন যেসব খাত টাইপ করে যোগ করবেন সেগুলো এখানে (DATA-এর সাথে) সেভ হয় */
 if (!DATA.customCats) DATA.customCats = { income: [], expense: [] };
 if (!DATA.staff) DATA.staff = { pending: [], approved: [] };
-if (!DATA.investors) DATA.investors = [];
+if (!DATA.investors) DATA.investors = { pending: [], approved: [] };
+if (Array.isArray(DATA.investors)) DATA.investors = { pending: [], approved: DATA.investors };
 if (!DATA.pdfs) DATA.pdfs = { project: null, invest: null };
 
 /* ---------- Firebase (ঐচ্ছিক ক্লাউড সিঙ্ক) ----------
@@ -1143,7 +1146,7 @@ document.getElementById("investorForm").addEventListener("submit", (ev)=>{
     id, name, email, phone, nid, age, amount, interest,
     submittedAt: new Date().toISOString()
   };
-  DATA.investors.push(record);
+  DATA.investors.pending.push(record);
   saveState();
   if (isAdmin) renderInvestorAdmin();
 
@@ -1151,12 +1154,34 @@ document.getElementById("investorForm").addEventListener("submit", (ev)=>{
   closeModal("investFormOverlay");
   alert(
     "সফলভাবে সাবমিট হয়েছে! আপনার ইনভেস্টর আইডি: " + id +
-    " — এটা এবং আপনার ইমেইল (" + email + ") ভবিষ্যতে 'ইনভেস্টর লগইন'-এ ব্যবহার করে আপনার তথ্য দেখতে পারবেন। আইডিটা সংরক্ষণ করে রাখুন।"
+    " — এটা মনে রাখুন। এটা অ্যাডমিনের অনুমোদনের অপেক্ষায় আছে; অনুমোদন হলে এই আইডি ও ইমেইল (" + email + ") দিয়ে 'ইনভেস্টর লগইন' করে আপনার তথ্য দেখতে পারবেন।"
   );
 });
 
 function renderInvestorAdmin(){
-  const list = DATA.investors || [];
+  const pending = DATA.investors.pending || [];
+  const list = DATA.investors.approved || [];
+
+  const pendWrap = document.getElementById("investorPendingList");
+  pendWrap.innerHTML = "";
+  if (!pending.length) {
+    pendWrap.innerHTML = `<div class="empty">কোনো অপেক্ষমাণ ইনভেস্টর অনুরোধ নেই।</div>`;
+  } else {
+    pending.forEach(r=>{
+      const row = document.createElement("div");
+      row.className = "req-row";
+      row.innerHTML = `
+        <div class="req-info"><b>${r.name} — ${r.id}</b><span>${r.email} · ${money2(r.amount)} · ${r.interest}%</span></div>
+        <div class="req-actions">
+          <button class="approve" data-id="${r.id}">অনুমোদন</button>
+          <button class="reject" data-id="${r.id}">বাতিল</button>
+        </div>`;
+      pendWrap.appendChild(row);
+    });
+    pendWrap.querySelectorAll(".approve").forEach(b=> b.onclick = () => approveInvestor(b.dataset.id));
+    pendWrap.querySelectorAll(".reject").forEach(b=> b.onclick = () => rejectInvestor(b.dataset.id));
+  }
+
   document.getElementById("invStatCount").textContent = list.length.toLocaleString("bn-BD");
   const totalAmount = list.reduce((s,r)=> s + (r.amount||0), 0);
   document.getElementById("invStatAmount").textContent = money2(totalAmount);
@@ -1195,8 +1220,22 @@ function renderInvestorAdmin(){
   });
 }
 
+function approveInvestor(id){
+  const idx = (DATA.investors.pending || []).findIndex(r=>r.id===id);
+  if (idx === -1) return;
+  const [req] = DATA.investors.pending.splice(idx,1);
+  DATA.investors.approved.push(req);
+  saveState();
+  renderInvestorAdmin();
+}
+function rejectInvestor(id){
+  DATA.investors.pending = (DATA.investors.pending || []).filter(r=>r.id!==id);
+  saveState();
+  renderInvestorAdmin();
+}
+
 document.getElementById("downloadInvestorExcelBtn").addEventListener("click", () => {
-  const list = DATA.investors || [];
+  const list = DATA.investors.approved || [];
   let html = "<table><tr><th>আইডি</th><th>নাম</th><th>ইমেইল</th><th>ফোন</th><th>NID</th><th>বয়স</th><th>পরিমাণ</th><th>ইন্টারেস্ট</th><th>তারিখ</th></tr>";
   list.forEach(r=>{
     const d = new Date(r.submittedAt);
@@ -1229,9 +1268,14 @@ document.getElementById("investorBtn").addEventListener("click", () => {
   if (!email) return;
   const id = (prompt("আপনার ইনভেস্টর আইডি দিন:") || "").trim().toUpperCase();
   if (!id) return;
-  const match = (DATA.investors || []).find(r => r.email === email && r.id.toUpperCase() === id);
+  const match = (DATA.investors.approved || []).find(r => r.email === email && r.id.toUpperCase() === id);
   if (!match) {
-    alert("এই ইমেইল ও আইডি দিয়ে কোনো ইনভেস্টর পাওয়া যায়নি। ইনভেস্ট করতে 'Invest করুন' বাটন ব্যবহার করুন।");
+    const stillPending = (DATA.investors.pending || []).find(r => r.email === email && r.id.toUpperCase() === id);
+    if (stillPending) {
+      alert("আপনার অনুরোধ এখনো অ্যাডমিনের অনুমোদনের অপেক্ষায় আছে। অনুমোদন হলে এই একই ইমেইল-আইডি দিয়ে লগইন করতে পারবেন।");
+    } else {
+      alert("এই ইমেইল ও আইডি দিয়ে কোনো ইনভেস্টর পাওয়া যায়নি। ইনভেস্ট করতে 'Invest করুন' বাটন ব্যবহার করুন।");
+    }
     return;
   }
   investorSession = { email: match.email, id: match.id };
@@ -1242,7 +1286,7 @@ document.getElementById("investorBtn").addEventListener("click", () => {
 
 function renderInvestorOwnView(){
   if (!investorSession) return;
-  const match = (DATA.investors || []).find(r => r.email === investorSession.email && r.id === investorSession.id);
+  const match = (DATA.investors.approved || []).find(r => r.email === investorSession.email && r.id === investorSession.id);
   const nameSpan = document.getElementById("investorNameSpan");
   const tbody = document.getElementById("investorOwnDataBody");
   tbody.innerHTML = "";
@@ -1465,7 +1509,8 @@ function startApp(){
 function normalizeData(d){
   if (!d.customCats) d.customCats = { income: [], expense: [] };
   if (!d.staff) d.staff = { pending: [], approved: [] };
-  if (!d.investors) d.investors = [];
+  if (!d.investors) d.investors = { pending: [], approved: [] };
+  if (Array.isArray(d.investors)) d.investors = { pending: [], approved: d.investors };
   if (!d.pdfs) d.pdfs = { project: null, invest: null };
   return d;
 }
