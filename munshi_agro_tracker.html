@@ -420,6 +420,10 @@
         style="flex:1; min-width:160px; padding:9px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:13.5px;">
       <input type="text" id="staffPasswordInput" placeholder="পাসওয়ার্ড"
         style="flex:1; min-width:140px; padding:9px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:13.5px;">
+      <input type="tel" id="staffPhoneInput" placeholder="মোবাইল নম্বর"
+        style="flex:1; min-width:140px; padding:9px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:13.5px;">
+      <input type="text" id="staffNidInput" placeholder="NID নম্বর"
+        style="flex:1; min-width:140px; padding:9px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:13.5px;">
       <button type="button" id="addStaffDirectBtn"
         style="border:none;border-radius:8px;padding:9px 18px;background:var(--mid);color:white;font-weight:700;cursor:pointer;font-family:inherit;">যোগ করুন</button>
     </div>
@@ -583,6 +587,8 @@ function ensureStaffExtras(rec){
   if (!rec.attendance) rec.attendance = {};
   if (!rec.leaves) rec.leaves = [];
   if (!rec.reports) rec.reports = [];
+  if (!rec.phone) rec.phone = "";
+  if (!rec.nid) rec.nid = "";
   return rec;
 }
 (DATA.staff.approved || []).forEach(ensureStaffExtras);
@@ -1078,9 +1084,10 @@ function renderStaffLists(){
       row.className = "req-row";
       row.innerHTML = `
         <div class="req-info"><b>${r.name || r.email} ${r.employeeId ? "— " + r.employeeId : ""}</b>
-          <span>${r.email} · বেতন: ৳${r.salary || 0} · এই মাসে উপস্থিতি: ${presentCount} দিন${pendingLeaves ? " · ছুটির অনুরোধ: " + pendingLeaves : ""}</span></div>
+          <span>${r.email}${r.phone ? " · 📞 " + r.phone : ""}${r.nid ? " · NID: " + r.nid : ""} · বেতন: ৳${r.salary || 0} · এই মাসে উপস্থিতি: ${presentCount} দিন${pendingLeaves ? " · ছুটির অনুরোধ: " + pendingLeaves : ""}</span></div>
         <div class="req-actions">
           <button class="setsal" data-id="${r.id}">বেতন সেট</button>
+          <button class="setcontact" data-id="${r.id}">নাম্বার/NID</button>
           <button class="viewrep" data-id="${r.id}">রিপোর্ট/ছুটি</button>
           <button class="revoke" data-id="${r.id}">এক্সেস বাতিল</button>
         </div>`;
@@ -1088,8 +1095,23 @@ function renderStaffLists(){
     });
     apprWrap.querySelectorAll(".revoke").forEach(b=> b.onclick = () => revokeStaff(b.dataset.id));
     apprWrap.querySelectorAll(".setsal").forEach(b=> b.onclick = () => setStaffSalary(b.dataset.id));
+    apprWrap.querySelectorAll(".setcontact").forEach(b=> b.onclick = () => setStaffContact(b.dataset.id));
     apprWrap.querySelectorAll(".viewrep").forEach(b=> b.onclick = () => viewStaffReportsAndLeaves(b.dataset.id));
   }
+}
+
+function setStaffContact(id){
+  const r = (DATA.staff.approved || []).find(r=>r.id===id);
+  if (!r) return;
+  ensureStaffExtras(r);
+  const phone = prompt("মোবাইল নম্বর দিন:", r.phone || "");
+  if (phone === null) return;
+  const nid = prompt("NID নম্বর দিন:", r.nid || "");
+  if (nid === null) return;
+  r.phone = phone.trim();
+  r.nid = nid.trim();
+  saveState();
+  renderStaffLists();
 }
 
 function setStaffSalary(id){
@@ -1501,9 +1523,13 @@ document.getElementById("addStaffDirectBtn").addEventListener("click", () => {
   const nameInput = document.getElementById("staffNameInput");
   const emailInput = document.getElementById("staffEmailInput");
   const passInput = document.getElementById("staffPasswordInput");
+  const phoneInput = document.getElementById("staffPhoneInput");
+  const nidInput = document.getElementById("staffNidInput");
   const name = nameInput.value.trim();
   const email = emailInput.value.trim().toLowerCase();
   const password = passInput.value;
+  const phone = phoneInput.value.trim();
+  const nid = nidInput.value.trim();
   if (!email || !password) {
     alert("ইমেইল ও পাসওয়ার্ড দুটোই দিতে হবে।");
     return;
@@ -1514,9 +1540,9 @@ document.getElementById("addStaffDirectBtn").addEventListener("click", () => {
     return;
   }
   const employeeId = generateEmployeeId();
-  DATA.staff.approved.push(ensureStaffExtras({ id: makeId(), employeeId, email, password, name }));
+  DATA.staff.approved.push(ensureStaffExtras({ id: makeId(), employeeId, email, password, name, phone, nid }));
   saveState();
-  nameInput.value = ""; emailInput.value = ""; passInput.value = "";
+  nameInput.value = ""; emailInput.value = ""; passInput.value = ""; phoneInput.value = ""; nidInput.value = "";
   renderStaffLists();
   alert("স্টাফ যোগ হয়ে গেছে। তার Employee ID: " + employeeId + " — এটা ও পাসওয়ার্ড তাকে জানিয়ে দিন, এটা দিয়ে সে লগইন করে এন্ট্রি দিতে পারবে।");
 });
