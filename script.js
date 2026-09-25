@@ -47,62 +47,51 @@
     });
   }
 
-  // Highlight the current section's nav link while scrolling.
-  // scroll-margin-top on sections (see CSS) keeps this in sync with the
-  // sticky header's height, so it needs no hardcoded offset here.
+  // ---------- Dashboard tabs (About / Focus / Projects / Contact) ----------
+  var dashTabs = Array.prototype.slice.call(document.querySelectorAll(".dash-tab"));
+  var tabPanels = Array.prototype.slice.call(document.querySelectorAll(".tab-panel"));
   var navLinks = Array.prototype.slice.call(document.querySelectorAll("a[data-nav]"));
-  var sections = navLinks
-    .map(function (link) {
-      var id = link.getAttribute("href").replace("#", "");
-      return document.getElementById(id);
-    })
-    .filter(Boolean);
 
-  function setActive(id) {
+  function activateTab(name) {
+    dashTabs.forEach(function (btn) {
+      var isMatch = btn.getAttribute("data-tab") === name;
+      btn.classList.toggle("active", isMatch);
+      btn.setAttribute("aria-selected", isMatch ? "true" : "false");
+    });
+    tabPanels.forEach(function (panel) {
+      panel.classList.toggle("active", panel.getAttribute("data-panel") === name);
+    });
     navLinks.forEach(function (link) {
-      link.classList.toggle("active", link.getAttribute("href") === "#" + id);
+      link.classList.toggle("active", link.getAttribute("href") === "#" + name);
     });
   }
 
-  if (sections.length) {
-    if ("IntersectionObserver" in window) {
-      // Track intersection ratios so the most-visible section wins,
-      // avoiding flicker when two sections are both partly on screen.
-      var ratios = {};
-      var observer = new IntersectionObserver(
-        function (entries) {
-          entries.forEach(function (entry) {
-            ratios[entry.target.id] = entry.isIntersecting ? entry.intersectionRatio : 0;
-          });
-          var currentId = null;
-          var best = 0;
-          sections.forEach(function (section) {
-            var r = ratios[section.id] || 0;
-            if (r > best) {
-              best = r;
-              currentId = section.id;
-            }
-          });
-          if (currentId) setActive(currentId);
-        },
-        { rootMargin: "-96px 0px -60% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] }
-      );
-      sections.forEach(function (section) { observer.observe(section); });
-      setActive(sections[0].id);
-    } else {
-      // Fallback for older browsers without IntersectionObserver.
-      var fallback = function () {
-        var scrollPos = window.scrollY + 120;
-        var current = sections[0];
-        sections.forEach(function (section) {
-          if (section.offsetTop <= scrollPos) current = section;
-        });
-        if (current) setActive(current.id);
-      };
-      window.addEventListener("scroll", fallback, { passive: true });
-      fallback();
-    }
-  }
+  dashTabs.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      activateTab(btn.getAttribute("data-tab"));
+    });
+  });
+
+  // Header nav links (About/Focus/Projects/Contact) switch the matching
+  // tab and scroll the dashboard section into view, rather than jumping
+  // to a hidden panel directly.
+  navLinks.forEach(function (link) {
+    link.addEventListener("click", function (e) {
+      var name = link.getAttribute("href").replace("#", "");
+      var hasTab = dashTabs.some(function (btn) { return btn.getAttribute("data-tab") === name; });
+      if (hasTab) {
+        e.preventDefault();
+        activateTab(name);
+        var dashboard = document.getElementById("dashboard");
+        if (dashboard) dashboard.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (siteNav && siteNav.classList.contains("open")) {
+          siteNav.classList.remove("open");
+          navToggle.classList.remove("open");
+          navToggle.setAttribute("aria-expanded", "false");
+        }
+      }
+    });
+  });
 
   // Footer year.
   var yearEl = document.getElementById("year");
