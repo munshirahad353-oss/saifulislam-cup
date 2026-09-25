@@ -239,9 +239,23 @@
 </div>
 
 <div class="container" id="investorView" style="display:none;">
+  <div class="stats">
+    <div class="stat-card income">
+      <div class="label">ফার্মের মোট আয় (লাইভ)</div>
+      <div class="value" id="invLiveIncome">৳০</div>
+    </div>
+    <div class="stat-card expense">
+      <div class="label">ফার্মের মোট খরচ (লাইভ)</div>
+      <div class="value" id="invLiveExpense">৳০</div>
+    </div>
+    <div class="stat-card net">
+      <div class="label">নিট মুনাফা (লাইভ)</div>
+      <div class="value" id="invLiveNet">৳০</div>
+    </div>
+  </div>
   <div class="card">
     <h2>স্বাগতম, <span id="investorNameSpan"></span></h2>
-    <p class="view-note">আপনার জমা দেওয়া ইনভেস্টমেন্ট তথ্য নিচে দেখানো হলো।</p>
+    <p class="view-note">আপনার জমা দেওয়া ইনভেস্টমেন্ট তথ্য নিচে দেখানো হলো। উপরের সংখ্যাগুলো পুরো ফার্মের সার্বিক, লাইভ আয়-ব্যয়ের অবস্থা — সবসময় হালনাগাদ থাকে।</p>
     <div class="table-wrap">
       <table>
         <tbody id="investorOwnDataBody"></tbody>
@@ -274,6 +288,7 @@
     <button type="button" class="nav-card" data-panel="panelChart"><span class="nav-icon">📈</span><span class="nav-label">বছরভিত্তিক আয়-ব্যয়</span></button>
     <button type="button" class="nav-card" data-panel="panelTable"><span class="nav-icon">🧾</span><span class="nav-label">সব এন্ট্রি</span></button>
     <button type="button" class="nav-card admin-hidden" data-panel="panelStaff" id="staffNavCard"><span class="nav-icon">🛂</span><span class="nav-label">স্টাফ ব্যবস্থাপনা</span></button>
+    <button type="button" class="nav-card admin-hidden" data-panel="panelMyWork" id="myWorkNavCard"><span class="nav-icon">🗓️</span><span class="nav-label">হাজিরা ও রিপোর্ট</span></button>
     <button type="button" class="nav-card admin-hidden" data-panel="panelInvestors" id="investorNavCard"><span class="nav-icon">💼</span><span class="nav-label">ইনভেস্টর</span></button>
   </div>
 
@@ -412,6 +427,27 @@
     <div id="approvedReqList"><div class="empty" id="approvedEmpty">এখনো কোনো স্টাফ অনুমোদিত হয়নি।</div></div>
   </div>
 
+  <div class="card section-panel admin-hidden" id="myWorkCard" data-panel-id="panelMyWork">
+    <h2>আমার হাজিরা ও রিপোর্ট</h2>
+    <p class="view-note">প্রতিদিন হাজিরা দিন, দিনের কাজের সংক্ষিপ্ত রিপোর্ট জমা দিন, প্রয়োজনে ছুটির আবেদন করুন — সবকিছু অ্যাডমিন দেখতে পাবেন।</p>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;">
+      <button type="button" id="markAttendanceBtn" class="btn" style="width:auto;">✅ আজকের হাজিরা দিন</button>
+      <button type="button" id="requestLeaveBtn" class="staff-btn" style="background:var(--amber-soft); color:var(--dark); border-color:var(--amber);">🏖️ ছুটির আবেদন</button>
+    </div>
+    <div id="attendanceStatus" class="view-note" style="margin-bottom:18px;"></div>
+
+    <h3 style="font-size:15px; margin:6px 0 8px;">আজকের কাজের রিপোর্ট</h3>
+    <textarea id="dailyReportInput" rows="3" placeholder="আজ কী কী কাজ করলেন সংক্ষেপে লিখুন..."
+      style="width:100%; padding:10px 12px; border-radius:10px; border:1.5px solid var(--soft); font-family:inherit; font-size:15px; background:var(--bg); color:var(--text); margin-bottom:10px;"></textarea>
+    <button type="button" id="submitReportBtn" class="btn" style="margin-bottom:20px;">রিপোর্ট জমা দিন</button>
+
+    <h3 style="font-size:15px; margin:6px 0 8px;">আমার সাম্প্রতিক রিপোর্ট</h3>
+    <div id="myReportsList" style="margin-bottom:20px;"></div>
+
+    <h3 style="font-size:15px; margin:6px 0 8px;">আমার ছুটির আবেদন</h3>
+    <div id="myLeavesList"></div>
+  </div>
+
   <div class="card section-panel admin-hidden" id="investorAdminCard" data-panel-id="panelInvestors">
     <h2>ইনভেস্টর</h2>
     <h3 style="font-size:15px;margin:0 0 8px;">অপেক্ষমাণ অনুরোধ</h3>
@@ -542,6 +578,18 @@ if (!DATA.staff) DATA.staff = { pending: [], approved: [] };
 if (!DATA.investors) DATA.investors = { pending: [], approved: [] };
 if (Array.isArray(DATA.investors)) DATA.investors = { pending: [], approved: DATA.investors };
 if (!DATA.pdfs) DATA.pdfs = { project: null, invest: null };
+function ensureStaffExtras(rec){
+  if (rec.salary === undefined || rec.salary === null) rec.salary = 0;
+  if (!rec.attendance) rec.attendance = {};
+  if (!rec.leaves) rec.leaves = [];
+  if (!rec.reports) rec.reports = [];
+  return rec;
+}
+(DATA.staff.approved || []).forEach(ensureStaffExtras);
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
 
 /* ---------- Firebase (ঐচ্ছিক ক্লাউড সিঙ্ক) ----------
    নিচের কনফিগটা আপনার নিজের Firebase প্রজেক্টের কনফিগ দিয়ে বদলে দিন।
@@ -940,6 +988,17 @@ function applyAdminUI(){
   }
   if (isAdmin) renderStaffLists();
 
+  const myWorkCard = document.getElementById("myWorkCard");
+  const myWorkNavCard = document.getElementById("myWorkNavCard");
+  const showMyWork = isStaff && !isAdmin;
+  myWorkCard.classList.toggle("admin-hidden", !showMyWork);
+  if (myWorkNavCard) myWorkNavCard.classList.toggle("admin-hidden", !showMyWork);
+  if (!showMyWork && myWorkCard.classList.contains("open")) {
+    myWorkCard.classList.remove("open");
+    if (myWorkNavCard) myWorkNavCard.classList.remove("active");
+  }
+  if (showMyWork) renderMyWork();
+
   const investorAdminCard = document.getElementById("investorAdminCard");
   const investorNavCard = document.getElementById("investorNavCard");
   investorAdminCard.classList.toggle("admin-hidden", !isAdmin);
@@ -1011,17 +1070,56 @@ function renderStaffLists(){
     apprWrap.innerHTML = `<div class="empty">এখনো কোনো স্টাফ অনুমোদিত হয়নি।</div>`;
   } else {
     approved.forEach(r=>{
+      ensureStaffExtras(r);
+      const thisMonth = todayISO().slice(0,7);
+      const presentCount = Object.keys(r.attendance).filter(d => d.startsWith(thisMonth) && r.attendance[d]==="present").length;
+      const pendingLeaves = r.leaves.filter(l=>l.status==="pending").length;
       const row = document.createElement("div");
       row.className = "req-row";
       row.innerHTML = `
-        <div class="req-info"><b>${r.name || r.email} ${r.employeeId ? "— " + r.employeeId : ""}</b><span>${r.email}</span></div>
+        <div class="req-info"><b>${r.name || r.email} ${r.employeeId ? "— " + r.employeeId : ""}</b>
+          <span>${r.email} · বেতন: ৳${r.salary || 0} · এই মাসে উপস্থিতি: ${presentCount} দিন${pendingLeaves ? " · ছুটির অনুরোধ: " + pendingLeaves : ""}</span></div>
         <div class="req-actions">
+          <button class="setsal" data-id="${r.id}">বেতন সেট</button>
+          <button class="viewrep" data-id="${r.id}">রিপোর্ট/ছুটি</button>
           <button class="revoke" data-id="${r.id}">এক্সেস বাতিল</button>
         </div>`;
       apprWrap.appendChild(row);
     });
     apprWrap.querySelectorAll(".revoke").forEach(b=> b.onclick = () => revokeStaff(b.dataset.id));
+    apprWrap.querySelectorAll(".setsal").forEach(b=> b.onclick = () => setStaffSalary(b.dataset.id));
+    apprWrap.querySelectorAll(".viewrep").forEach(b=> b.onclick = () => viewStaffReportsAndLeaves(b.dataset.id));
   }
+}
+
+function setStaffSalary(id){
+  const r = (DATA.staff.approved || []).find(r=>r.id===id);
+  if (!r) return;
+  const val = prompt("মাসিক বেতন (টাকা) দিন:", r.salary || 0);
+  if (val === null) return;
+  const n = parseFloat(val);
+  if (isNaN(n) || n < 0) { alert("সঠিক সংখ্যা দিন।"); return; }
+  r.salary = n;
+  saveState();
+  renderStaffLists();
+}
+
+function viewStaffReportsAndLeaves(id){
+  const r = (DATA.staff.approved || []).find(r=>r.id===id);
+  if (!r) return;
+  ensureStaffExtras(r);
+  const pendingLeaves = r.leaves.filter(l=>l.status==="pending");
+  if (pendingLeaves.length) {
+    pendingLeaves.forEach(l=>{
+      const ok = confirm(`ছুটির অনুরোধ — ${l.date}\nকারণ: ${l.reason}\n\nঅনুমোদন করতে OK, বাতিল করতে Cancel চাপুন।`);
+      l.status = ok ? "approved" : "rejected";
+    });
+    saveState();
+    renderStaffLists();
+  }
+  const recentReports = (r.reports || []).slice(-10).reverse()
+    .map(rep => `${rep.date}: ${rep.text}`).join("\n\n") || "কোনো রিপোর্ট জমা হয়নি।";
+  alert(`${r.name || r.email} — সাম্প্রতিক ডেইলি রিপোর্ট:\n\n${recentReports}`);
 }
 
 function generateEmployeeId(){
@@ -1044,6 +1142,7 @@ function approveStaff(id){
   const exists = (DATA.staff.approved || []).find(r=>r.email===req.email);
   if (!exists) {
     req.employeeId = generateEmployeeId();
+    ensureStaffExtras(req);
     DATA.staff.approved.push(req);
     saveState();
     renderStaffLists();
@@ -1286,6 +1385,14 @@ document.getElementById("investorBtn").addEventListener("click", () => {
 
 function renderInvestorOwnView(){
   if (!investorSession) return;
+
+  const allEntries = DATA.entries || [];
+  const liveInc = allEntries.filter(e=>e.type==="income").reduce((a,e)=>a+e.amount,0);
+  const liveExp = allEntries.filter(e=>e.type==="expense").reduce((a,e)=>a+e.amount,0);
+  document.getElementById("invLiveIncome").textContent = money(liveInc);
+  document.getElementById("invLiveExpense").textContent = money(liveExp);
+  document.getElementById("invLiveNet").textContent = money(liveInc-liveExp);
+
   const match = (DATA.investors.approved || []).find(r => r.email === investorSession.email && r.id === investorSession.id);
   const nameSpan = document.getElementById("investorNameSpan");
   const tbody = document.getElementById("investorOwnDataBody");
@@ -1298,6 +1405,8 @@ function renderInvestorOwnView(){
   nameSpan.textContent = match.name;
   const d = new Date(match.submittedAt);
   const dateStr = isNaN(d) ? "" : d.toLocaleDateString("bn-BD");
+  const profitShare = match.amount * (match.interest/100);
+  const totalReturn = match.amount + profitShare;
   tbody.innerHTML = `
     <tr><td>ইনভেস্টর আইডি</td><td>${match.id}</td></tr>
     <tr><td>ইমেইল</td><td>${match.email}</td></tr>
@@ -1306,9 +1415,87 @@ function renderInvestorOwnView(){
     <tr><td>বয়স</td><td>${match.age}</td></tr>
     <tr><td>ইনভেস্টমেন্ট পরিমাণ</td><td class="amt in">${money2(match.amount)}</td></tr>
     <tr><td>ইন্টারেস্ট</td><td>${match.interest}%</td></tr>
+    <tr><td>সম্ভাব্য মুনাফার অংশ</td><td class="amt in">${money2(profitShare)}</td></tr>
+    <tr><td>সম্ভাব্য মোট রিটার্ন (আসল+মুনাফা)</td><td class="amt in">${money2(totalReturn)}</td></tr>
     <tr><td>জমা দেওয়ার তারিখ</td><td>${dateStr}</td></tr>
   `;
 }
+
+function currentStaffRecord(){
+  if (!isStaff || !staffEmail) return null;
+  return (DATA.staff.approved || []).find(r => r.email === staffEmail) || null;
+}
+
+function renderMyWork(){
+  const rec = currentStaffRecord();
+  const statusEl = document.getElementById("attendanceStatus");
+  const repsEl = document.getElementById("myReportsList");
+  const leavesEl = document.getElementById("myLeavesList");
+  if (!rec) { statusEl.textContent = "স্টাফ তথ্য পাওয়া যায়নি।"; return; }
+  ensureStaffExtras(rec);
+  const today = todayISO();
+  const doneToday = rec.attendance[today] === "present";
+  statusEl.textContent = doneToday ? "✅ আজকের হাজিরা দেওয়া হয়ে গেছে।" : "আজকের হাজিরা এখনো দেননি।";
+  document.getElementById("markAttendanceBtn").disabled = doneToday;
+  document.getElementById("markAttendanceBtn").style.opacity = doneToday ? "0.6" : "1";
+
+  repsEl.innerHTML = "";
+  const reps = (rec.reports || []).slice(-8).reverse();
+  if (!reps.length) { repsEl.innerHTML = `<div class="empty">এখনো কোনো রিপোর্ট জমা দেননি।</div>`; }
+  else reps.forEach(rp=>{
+    const d = document.createElement("div");
+    d.className = "req-row";
+    d.innerHTML = `<div class="req-info"><b>${rp.date}</b><span>${rp.text}</span></div>`;
+    repsEl.appendChild(d);
+  });
+
+  leavesEl.innerHTML = "";
+  const leaves = (rec.leaves || []).slice().reverse();
+  if (!leaves.length) { leavesEl.innerHTML = `<div class="empty">কোনো ছুটির আবেদন নেই।</div>`; }
+  else leaves.forEach(lv=>{
+    const label = lv.status === "pending" ? "⏳ অপেক্ষমাণ" : lv.status === "approved" ? "✅ অনুমোদিত" : "❌ বাতিল";
+    const d = document.createElement("div");
+    d.className = "req-row";
+    d.innerHTML = `<div class="req-info"><b>${lv.date} — ${label}</b><span>${lv.reason}</span></div>`;
+    leavesEl.appendChild(d);
+  });
+}
+
+document.getElementById("markAttendanceBtn").addEventListener("click", () => {
+  const rec = currentStaffRecord();
+  if (!rec) return;
+  ensureStaffExtras(rec);
+  rec.attendance[todayISO()] = "present";
+  saveState();
+  renderMyWork();
+});
+
+document.getElementById("submitReportBtn").addEventListener("click", () => {
+  const rec = currentStaffRecord();
+  if (!rec) return;
+  const textEl = document.getElementById("dailyReportInput");
+  const text = textEl.value.trim();
+  if (!text) { alert("রিপোর্ট লিখুন।"); return; }
+  ensureStaffExtras(rec);
+  rec.reports.push({ id: makeId(), date: todayISO(), text });
+  saveState();
+  textEl.value = "";
+  renderMyWork();
+});
+
+document.getElementById("requestLeaveBtn").addEventListener("click", () => {
+  const rec = currentStaffRecord();
+  if (!rec) return;
+  const date = prompt("কোন তারিখের ছুটি চান? (YYYY-MM-DD)", todayISO());
+  if (!date) return;
+  const reason = prompt("ছুটির কারণ লিখুন:");
+  if (reason === null || !reason.trim()) { alert("কারণ দিতে হবে।"); return; }
+  ensureStaffExtras(rec);
+  rec.leaves.push({ id: makeId(), date, reason: reason.trim(), status: "pending" });
+  saveState();
+  renderMyWork();
+  alert("ছুটির আবেদন পাঠানো হয়েছে। অ্যাডমিন অনুমোদন দিলে এখানে দেখতে পাবেন।");
+});
 
 document.getElementById("addStaffDirectBtn").addEventListener("click", () => {
   const nameInput = document.getElementById("staffNameInput");
@@ -1327,7 +1514,7 @@ document.getElementById("addStaffDirectBtn").addEventListener("click", () => {
     return;
   }
   const employeeId = generateEmployeeId();
-  DATA.staff.approved.push({ id: makeId(), employeeId, email, password, name });
+  DATA.staff.approved.push(ensureStaffExtras({ id: makeId(), employeeId, email, password, name }));
   saveState();
   nameInput.value = ""; emailInput.value = ""; passInput.value = "";
   renderStaffLists();
@@ -1512,6 +1699,7 @@ function normalizeData(d){
   if (!d.investors) d.investors = { pending: [], approved: [] };
   if (Array.isArray(d.investors)) d.investors = { pending: [], approved: d.investors };
   if (!d.pdfs) d.pdfs = { project: null, invest: null };
+  (d.staff.approved || []).forEach(ensureStaffExtras);
   return d;
 }
 
