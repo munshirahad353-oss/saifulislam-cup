@@ -453,7 +453,6 @@
     <p class="view-note">প্রতিদিন হাজিরা দিন, দিনের কাজের সংক্ষিপ্ত রিপোর্ট জমা দিন, প্রয়োজনে ছুটির আবেদন করুন — সবকিছু অ্যাডমিন দেখতে পাবেন।</p>
     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;">
       <button type="button" id="markAttendanceBtn" class="btn" style="width:auto;">✅ আজকের হাজিরা দিন</button>
-      <button type="button" id="requestLeaveBtn" class="staff-btn" style="background:var(--amber-soft); color:var(--dark); border-color:var(--amber);">🏖️ ছুটির আবেদন</button>
     </div>
     <div id="attendanceStatus" class="view-note" style="margin-bottom:18px;"></div>
 
@@ -464,6 +463,15 @@
 
     <h3 style="font-size:15px; margin:6px 0 8px;">আমার সাম্প্রতিক রিপোর্ট</h3>
     <div id="myReportsList" style="margin-bottom:20px;"></div>
+
+    <h3 style="font-size:15px; margin:20px 0 8px;">ছুটির আবেদন</h3>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; margin-bottom:10px;">
+      <input type="date" id="leaveDateInput"
+        style="padding:10px 12px; border-radius:10px; border:1.5px solid var(--soft); font-family:inherit; font-size:15px; background:var(--bg); color:var(--text);">
+      <textarea id="leaveReasonInput" rows="2" placeholder="ছুটির কারণ লিখুন..."
+        style="flex:1; min-width:200px; padding:10px 12px; border-radius:10px; border:1.5px solid var(--soft); font-family:inherit; font-size:15px; background:var(--bg); color:var(--text);"></textarea>
+    </div>
+    <button type="button" id="requestLeaveBtn" class="staff-btn" style="background:var(--amber-soft); color:var(--dark); border-color:var(--amber); margin-bottom:20px;">🏖️ ছুটির আবেদন জমা দিন</button>
 
     <h3 style="font-size:15px; margin:6px 0 8px;">আমার ছুটির আবেদন</h3>
     <div id="myLeavesList"></div>
@@ -1569,6 +1577,8 @@ function renderMyWork(){
   statusEl.textContent = doneToday ? "✅ আজকের হাজিরা দেওয়া হয়ে গেছে।" : "আজকের হাজিরা এখনো দেননি।";
   document.getElementById("markAttendanceBtn").disabled = doneToday;
   document.getElementById("markAttendanceBtn").style.opacity = doneToday ? "0.6" : "1";
+  const leaveDateInput = document.getElementById("leaveDateInput");
+  if (!leaveDateInput.value) leaveDateInput.value = today;
 
   repsEl.innerHTML = "";
   const reps = (rec.reports || []).slice(-8).reverse();
@@ -1617,13 +1627,16 @@ document.getElementById("submitReportBtn").addEventListener("click", () => {
 document.getElementById("requestLeaveBtn").addEventListener("click", () => {
   const rec = currentStaffRecord();
   if (!rec) return;
-  const date = prompt("কোন তারিখের ছুটি চান? (YYYY-MM-DD)", todayISO());
-  if (!date) return;
-  const reason = prompt("ছুটির কারণ লিখুন:");
-  if (reason === null || !reason.trim()) { alert("কারণ দিতে হবে।"); return; }
+  const dateInput = document.getElementById("leaveDateInput");
+  const reasonInput = document.getElementById("leaveReasonInput");
+  const date = dateInput.value || todayISO();
+  const reason = reasonInput.value.trim();
+  if (!reason) { alert("ছুটির কারণ লিখুন।"); reasonInput.focus(); return; }
   ensureStaffExtras(rec);
-  rec.leaves.push({ id: makeId(), date, reason: reason.trim(), status: "pending" });
+  rec.leaves.push({ id: makeId(), date, reason, status: "pending" });
   saveState();
+  reasonInput.value = "";
+  dateInput.value = "";
   renderMyWork();
   alert("ছুটির আবেদন পাঠানো হয়েছে। অ্যাডমিন অনুমোদন দিলে এখানে দেখতে পাবেন।");
 });
