@@ -222,6 +222,16 @@ a:focus-visible, button:focus-visible {
   animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+.hero-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--white);
+  box-shadow: 0 6px 16px rgba(27, 67, 50, 0.18);
+  margin-bottom: 14px;
+}
+
 @keyframes rise {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
@@ -269,6 +279,15 @@ a:focus-visible, button:focus-visible {
   border: 1px solid rgba(46,33,21,0.3);
 }
 .btn-ghost:hover { border-color: var(--soil); background: rgba(46,33,21,0.05); }
+
+/* accent button — reserved for the one action we most want tapped (Invest) */
+.btn-accent {
+  background: var(--harvest);
+  color: var(--soil);
+  border: 1px solid var(--harvest);
+  font-weight: 700;
+}
+.btn-accent:hover { background: var(--harvest-deep); color: var(--white); border-color: var(--harvest-deep); }
 
 /* ---------- hero tracker (embedded live iframe) ---------- */
 .hero-tracker {
@@ -335,7 +354,104 @@ a:focus-visible, button:focus-visible {
   background: var(--husk-deep);
 }
 
+.about-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 28px;
+  align-items: start;
+  margin-bottom: 8px;
+}
 .about-grid p { color: var(--ink-soft); }
+.about-photo {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(27, 67, 50, 0.14);
+}
+@media (max-width: 640px) {
+  .about-grid { grid-template-columns: 1fr; }
+  .about-photo { max-width: 220px; margin: 0 auto; }
+}
+
+/* ---------- income/expense chart ---------- */
+.chart-block {
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(46,33,21,0.14);
+}
+.chart-block h3 { margin-bottom: 14px; }
+.chart-wrap {
+  max-width: 720px;
+  overflow-x: auto;
+}
+.income-chart {
+  width: 100%;
+  min-width: 480px;
+  height: auto;
+  display: block;
+}
+.income-chart .chart-grid { stroke: rgba(46,33,21,0.12); stroke-width: 1; }
+.income-chart .chart-ylabel,
+.income-chart .chart-xlabel {
+  font-family: var(--sans);
+  font-size: 11.5px;
+  fill: var(--ink-soft);
+}
+.income-chart .bar-income { fill: var(--paddy); }
+.income-chart .bar-expense { fill: var(--harvest); }
+
+.chart-legend {
+  display: flex;
+  gap: 20px;
+  margin-top: 10px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+.chart-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.legend-dot {
+  width: 10px; height: 10px; border-radius: 3px; display: inline-block;
+}
+.dot-income { background: var(--paddy); }
+.dot-expense { background: var(--harvest); }
+
+.chart-note {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin-top: 10px;
+  max-width: 60ch;
+}
+
+/* ---------- project image gallery ---------- */
+.project-gallery {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 18px 0 4px;
+}
+.project-gallery figure {
+  margin: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--husk-deep);
+}
+.project-gallery img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+.project-gallery figure:hover img { transform: scale(1.05); }
+.project-gallery figcaption {
+  font-size: 12px;
+  color: var(--ink-soft);
+  padding: 8px 10px;
+}
+@media (max-width: 560px) {
+  .project-gallery { grid-template-columns: 1fr; }
+  .project-gallery img { height: 180px; }
+}
 
 .focus-grid {
   display: grid;
@@ -348,7 +464,9 @@ a:focus-visible, button:focus-visible {
 .focus-item {
   border-top: 2px solid var(--harvest);
   padding-top: 14px;
+  transition: transform 0.2s ease;
 }
+.focus-item:hover { transform: translateY(-3px); }
 .focus-item p { color: var(--ink-soft); font-size: 15px; }
 
 /* ---------- project card ---------- */
@@ -358,6 +476,11 @@ a:focus-visible, button:focus-visible {
   border-radius: 12px;
   padding: 32px;
   max-width: 620px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.project-card:hover {
+  box-shadow: 0 14px 30px rgba(27, 67, 50, 0.12);
+  transform: translateY(-3px);
 }
 .project-tag {
   display: inline-block;
@@ -470,6 +593,20 @@ a:focus-visible, button:focus-visible {
 }
 .divider svg { width: 100%; height: 100%; display: block; }
 
+/* ---------- scroll fade-in (progressive enhancement, JS opt-in) ---------- */
+.fade-init {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-init.fade-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fade-init { transition: none; opacity: 1; transform: none; }
+}
+
 /* ---------- footer ---------- */
 .site-footer {
   background: var(--soil);
@@ -506,6 +643,8 @@ a:focus-visible, button:focus-visible {
   a { color: #000; text-decoration: underline; }
   .site-nav { display: none !important; }
   .section { padding: 20px 0; page-break-inside: avoid; }
+  .fade-init { opacity: 1 !important; transform: none !important; }
+  .project-gallery { grid-template-columns: 1fr 1fr; }
   .project-card { border: 1px solid #999; box-shadow: none; }
   .site-footer { background: #fff; color: #000; border-top: 1px solid #999; }
 }

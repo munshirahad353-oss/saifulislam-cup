@@ -171,6 +171,23 @@
     });
   });
 
+  // ---------- Scroll fade-in (progressive enhancement) ----------
+  // Only activates when JS + IntersectionObserver are available, so the
+  // page is fully visible by default without them.
+  var fadeSection = document.querySelector(".section.dashboard-section");
+  if (fadeSection && "IntersectionObserver" in window) {
+    fadeSection.classList.add("fade-init");
+    var fadeObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          fadeSection.classList.add("fade-in");
+          fadeObserver.unobserve(fadeSection);
+        }
+      });
+    }, { threshold: 0.08 });
+    fadeObserver.observe(fadeSection);
+  }
+
   // Footer year.
   var yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = new Date().getFullYear();
