@@ -116,26 +116,58 @@
   // whatever the admin has set inside the tracker itself.
   var heroTrackerButtons = Array.prototype.slice.call(document.querySelectorAll("[data-tracker-btn]"));
   var heroTrackerFrame = document.getElementById("heroTrackerFrame");
+  var heroTrackerFrameReady = false;
+
+  if (heroTrackerFrame) {
+    heroTrackerFrame.addEventListener("load", function () {
+      heroTrackerFrameReady = true;
+    });
+  }
+
+  function clickInnerTrackerButton(targetId) {
+    // Returns true if the click was successfully forwarded into the iframe.
+    try {
+      if (heroTrackerFrame && heroTrackerFrame.contentDocument) {
+        var innerBtn = heroTrackerFrame.contentDocument.getElementById(targetId);
+        if (innerBtn) {
+          heroTrackerFrame.scrollIntoView({ behavior: "smooth", block: "center" });
+          innerBtn.click();
+          return true;
+        }
+      }
+    } catch (err) {
+      // cross-origin (e.g. opened via file://) — fall back to opening a new tab
+    }
+    return false;
+  }
 
   heroTrackerButtons.forEach(function (btn) {
     btn.addEventListener("click", function () {
       var targetId = btn.getAttribute("data-tracker-btn");
-      var opened = false;
-      try {
-        if (heroTrackerFrame && heroTrackerFrame.contentDocument) {
-          var innerBtn = heroTrackerFrame.contentDocument.getElementById(targetId);
-          if (innerBtn) {
-            heroTrackerFrame.scrollIntoView({ behavior: "smooth", block: "center" });
-            innerBtn.click();
-            opened = true;
+
+      if (clickInnerTrackerButton(targetId)) return;
+
+      // Iframe likely hasn't finished loading yet: wait for it, then retry
+      // once, instead of immediately popping a new tab.
+      if (heroTrackerFrame && !heroTrackerFrameReady) {
+        var retried = false;
+        var onReady = function () {
+          if (retried) return;
+          retried = true;
+          if (!clickInnerTrackerButton(targetId)) {
+            window.open("munshi_agro_tracker.html", "_blank", "noopener");
           }
-        }
-      } catch (err) {
-        opened = false; // cross-origin or not-yet-loaded — fall back below
+        };
+        heroTrackerFrame.addEventListener("load", onReady, { once: true });
+        // Safety net in case the load event already fired just before this
+        // listener was attached (race condition on slow connections).
+        setTimeout(function () {
+          if (!retried) onReady();
+        }, 1500);
+        return;
       }
-      if (!opened) {
-        window.open("munshi_agro_tracker.html", "_blank", "noopener");
-      }
+
+      window.open("munshi_agro_tracker.html", "_blank", "noopener");
     });
   });
 
