@@ -96,13 +96,15 @@
           স্থানীয় সম্পদের সর্বোত্তম ব্যবহার এবং গ্রামীণ কর্মসংস্থান সৃষ্টি করাই আমার লক্ষ্য।
         </p>
         <div class="hero-actions">
-          <a href="#projects" class="btn btn-primary" data-nav>প্রজেক্ট ট্র্যাকার দেখুন</a>
-          <a href="#contact" class="btn btn-ghost" data-nav>যোগাযোগ করুন</a>
+          <button type="button" class="btn btn-primary" data-tracker-btn="btnProjectInfo">📄 Project সম্পর্কে</button>
+          <button type="button" class="btn btn-primary" data-tracker-btn="btnInvestInfo">📄 Invest সম্পর্কে</button>
+          <button type="button" class="btn btn-ghost" data-tracker-btn="btnInvestNow">💰 Invest করুন</button>
         </div>
       </div>
       <div class="hero-tracker">
         <p class="tracker-col-label">মুন্সী এগ্রো — হিসাব-নিকাশ (লাইভ)</p>
         <iframe
+          id="heroTrackerFrame"
           class="tracker-frame"
           src="munshi_agro_tracker.html"
           title="মুন্সী এগ্রো হিসাব-নিকাশ ট্র্যাকার"

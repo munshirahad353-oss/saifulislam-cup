@@ -110,6 +110,35 @@
     });
   });
 
+  // ---------- Hero buttons: reuse the tracker's own Project/Invest options ----------
+  // These buttons reach into the already-embedded tracker iframe (same-origin)
+  // and click its real button, so PDFs / the invest form stay in sync with
+  // whatever the admin has set inside the tracker itself.
+  var heroTrackerButtons = Array.prototype.slice.call(document.querySelectorAll("[data-tracker-btn]"));
+  var heroTrackerFrame = document.getElementById("heroTrackerFrame");
+
+  heroTrackerButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var targetId = btn.getAttribute("data-tracker-btn");
+      var opened = false;
+      try {
+        if (heroTrackerFrame && heroTrackerFrame.contentDocument) {
+          var innerBtn = heroTrackerFrame.contentDocument.getElementById(targetId);
+          if (innerBtn) {
+            heroTrackerFrame.scrollIntoView({ behavior: "smooth", block: "center" });
+            innerBtn.click();
+            opened = true;
+          }
+        }
+      } catch (err) {
+        opened = false; // cross-origin or not-yet-loaded — fall back below
+      }
+      if (!opened) {
+        window.open("munshi_agro_tracker.html", "_blank", "noopener");
+      }
+    });
+  });
+
   // Footer year.
   var yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = new Date().getFullYear();
