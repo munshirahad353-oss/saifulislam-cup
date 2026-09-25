@@ -20,7 +20,7 @@
   --white: #FFFFFF;
 
   --serif: 'Tiro Bangla', 'Noto Serif Bengali', Georgia, serif;
-  --sans: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, sans-serif;
+  --sans: 'Tiro Bangla', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, sans-serif;
 
   --max: 1080px;
   box-sizing: border-box;
