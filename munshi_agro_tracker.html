@@ -144,6 +144,23 @@
     background: var(--white); border-radius: 16px; padding: 26px 22px; max-width: 480px; width: 100%;
     max-height: 90vh; overflow-y: auto; position: relative;
   }
+  .modal-box.wide { max-width: 560px; }
+  .report-box {
+    border: 1.5px solid var(--soft); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; cursor: pointer;
+    background: var(--bg); transition: background 0.15s;
+  }
+  .report-box:hover { background: var(--soft); }
+  .report-box .report-date { font-weight: 700; font-size: 13.5px; display:flex; justify-content:space-between; align-items:center; }
+  .report-box .report-text { display:none; margin-top:8px; font-size: 14px; line-height:1.6; white-space: pre-wrap; }
+  .report-box.expanded .report-text { display:block; }
+  .leave-box { border: 1.5px solid var(--soft); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; background: var(--bg); }
+  .leave-box .leave-date { font-weight: 700; font-size: 13.5px; }
+  .leave-box .leave-reason { font-size: 14px; margin: 6px 0 10px; line-height:1.6; }
+  .leave-box .leave-actions { display:flex; gap:8px; }
+  .leave-box .leave-actions button { border:none; border-radius:8px; padding:7px 14px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+  .leave-approve { background: var(--soft); color: var(--dark); }
+  .leave-reject { background: #FDE2DA; color: var(--red); }
+  .leave-status { font-size: 13px; font-weight: 700; }
   .modal-close {
     position: absolute; top: 14px; left: 14px; background: var(--soft); border: none; border-radius: 50%;
     width: 30px; height: 30px; font-size: 15px; cursor: pointer; color: var(--dark);
@@ -553,6 +570,25 @@
     <h2 id="pdfInfoTitle">PDF</h2>
     <p id="pdfInfoBody" class="view-note"></p>
     <a id="pdfInfoLink" class="btn btn-primary" href="#" target="_blank" rel="noopener">PDF খুলুন</a>
+  </div>
+</div>
+
+<div class="modal-overlay" id="staffDetailOverlay" style="display:none;">
+  <div class="modal-box wide">
+    <button type="button" class="modal-close" id="staffDetailClose">✕</button>
+    <h2 id="staffDetailTitle">স্টাফ</h2>
+    <p class="view-note" id="staffDetailSub"></p>
+
+    <h3 style="font-size:15px; margin:16px 0 8px;">কাজের রিপোর্ট</h3>
+    <div style="margin-bottom:10px;">
+      <select id="staffDetailDateFilter" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:13.5px;">
+        <option value="">সব তারিখ দেখুন</option>
+      </select>
+    </div>
+    <div id="staffDetailReports"></div>
+
+    <h3 style="font-size:15px; margin:20px 0 8px;">ছুটির আবেদন</h3>
+    <div id="staffDetailLeaves"></div>
   </div>
 </div>
 
@@ -1088,7 +1124,7 @@ function renderStaffLists(){
         <div class="req-actions">
           <button class="setsal" data-id="${r.id}">বেতন সেট</button>
           <button class="setcontact" data-id="${r.id}">নাম্বার/NID</button>
-          <button class="viewrep" data-id="${r.id}">রিপোর্ট/ছুটি</button>
+          <button class="viewrep" data-id="${r.id}">রিপোর্ট দেখুন</button>
           <button class="revoke" data-id="${r.id}">এক্সেস বাতিল</button>
         </div>`;
       apprWrap.appendChild(row);
@@ -1126,23 +1162,96 @@ function setStaffSalary(id){
   renderStaffLists();
 }
 
+let staffDetailCurrentId = null;
+
 function viewStaffReportsAndLeaves(id){
-  const r = (DATA.staff.approved || []).find(r=>r.id===id);
-  if (!r) return;
-  ensureStaffExtras(r);
-  const pendingLeaves = r.leaves.filter(l=>l.status==="pending");
-  if (pendingLeaves.length) {
-    pendingLeaves.forEach(l=>{
-      const ok = confirm(`ছুটির অনুরোধ — ${l.date}\nকারণ: ${l.reason}\n\nঅনুমোদন করতে OK, বাতিল করতে Cancel চাপুন।`);
-      l.status = ok ? "approved" : "rejected";
-    });
-    saveState();
-    renderStaffLists();
-  }
-  const recentReports = (r.reports || []).slice(-10).reverse()
-    .map(rep => `${rep.date}: ${rep.text}`).join("\n\n") || "কোনো রিপোর্ট জমা হয়নি।";
-  alert(`${r.name || r.email} — সাম্প্রতিক ডেইলি রিপোর্ট:\n\n${recentReports}`);
+  staffDetailCurrentId = id;
+  renderStaffDetailModal();
+  openModal("staffDetailOverlay");
 }
+
+function renderStaffDetailModal(dateFilterValue){
+  const r = (DATA.staff.approved || []).find(r=>r.id===staffDetailCurrentId);
+  if (!r) { closeModal("staffDetailOverlay"); return; }
+  ensureStaffExtras(r);
+
+  document.getElementById("staffDetailTitle").textContent = r.name || r.email;
+  document.getElementById("staffDetailSub").textContent =
+    `Employee ID: ${r.employeeId || "—"} · ${r.email}${r.phone ? " · 📞 " + r.phone : ""}`;
+
+  // date filter dropdown — built from this staff's report dates
+  const filterEl = document.getElementById("staffDetailDateFilter");
+  const dates = [...new Set((r.reports||[]).map(rep=>rep.date))].sort().reverse();
+  const prevValue = dateFilterValue !== undefined ? dateFilterValue : filterEl.value;
+  filterEl.innerHTML = `<option value="">সব তারিখ দেখুন</option>` +
+    dates.map(d => `<option value="${d}">${d}</option>`).join("");
+  filterEl.value = dates.includes(prevValue) ? prevValue : "";
+
+  // reports list
+  const reportsEl = document.getElementById("staffDetailReports");
+  reportsEl.innerHTML = "";
+  const reports = (r.reports||[]).slice().reverse()
+    .filter(rep => !filterEl.value || rep.date === filterEl.value);
+  if (!reports.length) {
+    reportsEl.innerHTML = `<div class="empty">এই স্টাফের কোনো রিপোর্ট জমা নেই।</div>`;
+  } else {
+    reports.forEach(rep=>{
+      const box = document.createElement("div");
+      box.className = "report-box";
+      box.innerHTML = `<div class="report-date"><span>📅 ${rep.date}</span><span>▾</span></div>
+        <div class="report-text">${(rep.text||"").replace(/</g,"&lt;")}</div>`;
+      box.addEventListener("click", () => box.classList.toggle("expanded"));
+      reportsEl.appendChild(box);
+    });
+  }
+
+  // leave requests list
+  const leavesEl = document.getElementById("staffDetailLeaves");
+  leavesEl.innerHTML = "";
+  const leaves = (r.leaves||[]).slice().reverse();
+  if (!leaves.length) {
+    leavesEl.innerHTML = `<div class="empty">কোনো ছুটির আবেদন নেই।</div>`;
+  } else {
+    leaves.forEach(lv=>{
+      const box = document.createElement("div");
+      box.className = "leave-box";
+      if (lv.status === "pending") {
+        box.innerHTML = `<div class="leave-date">📅 ${lv.date}</div>
+          <div class="leave-reason">কারণ: ${(lv.reason||"").replace(/</g,"&lt;")}</div>
+          <div class="leave-actions">
+            <button class="leave-approve" data-lid="${lv.id}">✅ অনুমোদন</button>
+            <button class="leave-reject" data-lid="${lv.id}">❌ বাতিল</button>
+          </div>`;
+      } else {
+        const label = lv.status === "approved" ? "✅ অনুমোদিত" : "❌ বাতিল করা হয়েছে";
+        box.innerHTML = `<div class="leave-date">📅 ${lv.date} <span class="leave-status">— ${label}</span></div>
+          <div class="leave-reason">কারণ: ${(lv.reason||"").replace(/</g,"&lt;")}</div>`;
+      }
+      leavesEl.appendChild(box);
+    });
+    leavesEl.querySelectorAll(".leave-approve").forEach(b=> b.onclick = () => decideLeave(r.id, b.dataset.lid, "approved"));
+    leavesEl.querySelectorAll(".leave-reject").forEach(b=> b.onclick = () => decideLeave(r.id, b.dataset.lid, "rejected"));
+  }
+}
+
+function decideLeave(staffId, leaveId, decision){
+  const r = (DATA.staff.approved || []).find(r=>r.id===staffId);
+  if (!r) return;
+  const lv = (r.leaves||[]).find(l=>l.id===leaveId);
+  if (!lv) return;
+  lv.status = decision;
+  saveState();
+  renderStaffDetailModal();
+  renderStaffLists();
+}
+
+document.getElementById("staffDetailDateFilter").addEventListener("change", (ev) => {
+  renderStaffDetailModal(ev.target.value);
+});
+document.getElementById("staffDetailClose").addEventListener("click", () => closeModal("staffDetailOverlay"));
+document.getElementById("staffDetailOverlay").addEventListener("click", (ev) => {
+  if (ev.target.id === "staffDetailOverlay") closeModal("staffDetailOverlay");
+});
 
 function generateEmployeeId(){
   let id;
