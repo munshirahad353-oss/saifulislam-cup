@@ -120,7 +120,7 @@
   .bulk-total { text-align: left; font-size: 14px; color: var(--muted); margin: -2px 0 14px; font-weight: 600; }
   .bulk-total b { color: var(--dark); }
   label { font-size: 13px; color: var(--muted); font-weight: 600; display: block; margin-bottom: 5px; }
-  select, input[type=number], input[type=text] {
+  select, input[type=number], input[type=text], input[type=email], input[type=tel] {
     width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--soft);
     font-family: inherit; font-size: 15px; background: var(--bg); color: var(--text);
   }
@@ -130,6 +130,24 @@
     font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%;
   }
   .btn:active { opacity: 0.85; }
+  .btn-primary { display: inline-block; text-align: center; text-decoration: none; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-grid .full { grid-column: 1 / -1; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200;
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-box {
+    background: var(--white); border-radius: 16px; padding: 26px 22px; max-width: 480px; width: 100%;
+    max-height: 90vh; overflow-y: auto; position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 14px; left: 14px; background: var(--soft); border: none; border-radius: 50%;
+    width: 30px; height: 30px; font-size: 15px; cursor: pointer; color: var(--dark);
+  }
 
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   thead th { text-align: right; font-size: 12px; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1.5px solid var(--soft); }
@@ -163,6 +181,7 @@
   .section-panel.open { display: block; }
   .section-panel.admin-hidden { display: none !important; }
   .nav-card.admin-hidden { display: none !important; }
+  .admin-hidden { display: none !important; }
   .cat-split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   @media (max-width: 640px) { .cat-split { grid-template-columns: 1fr; } }
   .cat-split h3 { font-size: 15px; margin: 0 0 10px; }
@@ -204,13 +223,34 @@
     <h1>মুন্সী এগ্রো — হিসাব-নিকাশ</h1>
     <p>দৈনন্দিন আয়-ব্যয়ের হিসাব রাখুন, বছরভিত্তিক নিট মুনাফা দেখুন</p>
     <div class="admin-bar">
+      <button class="staff-btn" id="investorBtn" type="button">💼 ইনভেস্টর লগইন</button>
       <button class="staff-btn" id="staffBtn" type="button">👤 স্টাফ লগইন</button>
       <button class="admin-btn" id="adminBtn" type="button">🔒 অ্যাডমিন লগইন</button>
     </div>
   </div>
 </header>
 
-<div class="container">
+<div class="container" id="publicView">
+  <div class="nav-grid" style="grid-template-columns:repeat(3,1fr);">
+    <button type="button" class="nav-card" id="btnProjectInfo"><span class="nav-icon">📄</span><span class="nav-label">Project সম্পর্কে</span></button>
+    <button type="button" class="nav-card" id="btnInvestInfo"><span class="nav-icon">📄</span><span class="nav-label">Invest সম্পর্কে</span></button>
+    <button type="button" class="nav-card" id="btnInvestNow"><span class="nav-icon">💰</span><span class="nav-label">Invest করুন</span></button>
+  </div>
+</div>
+
+<div class="container" id="investorView" style="display:none;">
+  <div class="card">
+    <h2>স্বাগতম, <span id="investorNameSpan"></span></h2>
+    <p class="view-note">আপনার জমা দেওয়া ইনভেস্টমেন্ট তথ্য নিচে দেখানো হলো।</p>
+    <div class="table-wrap">
+      <table>
+        <tbody id="investorOwnDataBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="container" id="dashboardView" style="display:none;">
   <div class="stats">
     <div class="stat-card income">
       <div class="label">মোট আয়</div>
@@ -234,6 +274,7 @@
     <button type="button" class="nav-card" data-panel="panelChart"><span class="nav-icon">📈</span><span class="nav-label">বছরভিত্তিক আয়-ব্যয়</span></button>
     <button type="button" class="nav-card" data-panel="panelTable"><span class="nav-icon">🧾</span><span class="nav-label">সব এন্ট্রি</span></button>
     <button type="button" class="nav-card admin-hidden" data-panel="panelStaff" id="staffNavCard"><span class="nav-icon">🛂</span><span class="nav-label">স্টাফ ব্যবস্থাপনা</span></button>
+    <button type="button" class="nav-card admin-hidden" data-panel="panelInvestors" id="investorNavCard"><span class="nav-icon">💼</span><span class="nav-label">ইনভেস্টর</span></button>
   </div>
 
   <div class="card section-panel" id="entryCard" data-panel-id="panelEntry">
@@ -370,7 +411,107 @@
     <h3 style="font-size:15px;margin:16px 0 6px;">অনুমোদিত স্টাফ</h3>
     <div id="approvedReqList"><div class="empty" id="approvedEmpty">এখনো কোনো স্টাফ অনুমোদিত হয়নি।</div></div>
   </div>
+
+  <div class="card section-panel admin-hidden" id="investorAdminCard" data-panel-id="panelInvestors">
+    <h2>ইনভেস্টর</h2>
+    <div class="stats" style="margin-top:0;">
+      <div class="stat-card income">
+        <div class="label">মোট ইনভেস্টর</div>
+        <div class="value" id="invStatCount">০</div>
+      </div>
+      <div class="stat-card net">
+        <div class="label">মোট ইনভেস্টমেন্ট</div>
+        <div class="value" id="invStatAmount">৳০</div>
+      </div>
+      <div class="stat-card expense">
+        <div class="label">গড় ইন্টারেস্ট</div>
+        <div class="value" id="invStatInterest">০%</div>
+      </div>
+    </div>
+    <div class="cat-split" style="margin:18px 0;">
+      <div>
+        <h3 class="in-h">ইনভেস্টমেন্ট পরিমাণ অনুযায়ী</h3>
+        <div class="table-wrap"><table><tbody id="invAmountBreakdown"></tbody></table></div>
+      </div>
+      <div>
+        <h3 class="ex-h">ইন্টারেস্ট % অনুযায়ী</h3>
+        <div class="table-wrap"><table><tbody id="invInterestBreakdown"></tbody></table></div>
+      </div>
+    </div>
+    <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+      <button type="button" id="downloadInvestorExcelBtn"
+        style="border:none;border-radius:8px;padding:9px 16px;background:var(--mid);color:white;font-weight:700;cursor:pointer;font-family:inherit;">⬇️ Excel ডাউনলোড</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>আইডি</th><th>নাম</th><th>ইমেইল</th><th>ফোন</th><th>NID</th><th>বয়স</th><th>পরিমাণ</th><th>ইন্টারেস্ট</th><th>তারিখ</th></tr></thead>
+        <tbody id="investorTableBody"></tbody>
+      </table>
+      <div class="empty" id="investorEmpty">এখনো কোনো ইনভেস্টর সাবমিট করেনি।</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>PDF ব্যবস্থাপনা</h2>
+    <p class="view-note">নিচে থেকে PDF আপলোড করলে সেটা ক্লাউডে সেভ হয়ে "Project সম্পর্কে" / "Invest সম্পর্কে" বাটনে সবাই (পাবলিকসহ) দেখতে পারবে। PDF ফাইল ছোট রাখুন (৩০০-৪০০ KB-এর মধ্যে হলে নিরাপদ), নাহলে সেভ ব্যর্থ হতে পারে। আপলোড না করলে, বিকল্প হিসেবে <b>project-plan.pdf</b> ও <b>invest-plan.pdf</b> নামে ফাইল GitHub রিপোতে HTML ফাইলের পাশে রাখলেও কাজ করবে।</p>
+    <div id="pdfAdminControls" class="admin-hidden">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
+        <label style="font-weight:700; font-size:13.5px; min-width:150px;">Project প্ল্যান PDF</label>
+        <input type="file" id="projectPdfInput" accept="application/pdf">
+        <span id="projectPdfStatus" style="font-size:12.5px; color:var(--mid);"></span>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+        <label style="font-weight:700; font-size:13.5px; min-width:150px;">Invest প্ল্যান PDF</label>
+        <input type="file" id="investPdfInput" accept="application/pdf">
+        <span id="investPdfStatus" style="font-size:12.5px; color:var(--mid);"></span>
+      </div>
+    </div>
+  </div>
 </div>
+</div>
+
+<div class="modal-overlay" id="investFormOverlay" style="display:none;">
+  <div class="modal-box">
+    <button type="button" class="modal-close" id="investFormClose">✕</button>
+    <h2>Invest করুন</h2>
+    <form id="investorForm">
+      <div class="form-grid">
+        <label class="full">নাম<input required type="text" id="invName"></label>
+        <label>ইমেইল<input required type="email" id="invEmail"></label>
+        <label>ফোন নম্বর<input required type="tel" id="invPhone"></label>
+        <label>NID নম্বর<input required type="text" id="invNid"></label>
+        <label>বয়স (২৩–৮০)<input required type="number" min="23" max="80" id="invAge"></label>
+        <label>Investment Amount
+          <select required id="invAmount">
+            <option value="">বাছাই করুন</option>
+            <option value="100000">৳১,০০,০০০</option>
+            <option value="200000">৳২,০০,০০০</option>
+            <option value="300000">৳৩,০০,০০০</option>
+          </select>
+        </label>
+        <label>Interest
+          <select required id="invInterest">
+            <option value="">বাছাই করুন</option>
+            <option value="50">50%</option>
+            <option value="80">80%</option>
+            <option value="100">100%</option>
+          </select>
+        </label>
+        <div class="full">
+          <button type="submit" class="btn">Submit</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="pdfInfoOverlay" style="display:none;">
+  <div class="modal-box">
+    <button type="button" class="modal-close" id="pdfInfoClose">✕</button>
+    <h2 id="pdfInfoTitle">PDF</h2>
+    <p id="pdfInfoBody" class="view-note"></p>
+    <a id="pdfInfoLink" class="btn btn-primary" href="#" target="_blank" rel="noopener">PDF খুলুন</a>
+  </div>
 </div>
 
 <script>
@@ -396,6 +537,8 @@ const CATS = {
 /* ব্যবহারকারী নতুন যেসব খাত টাইপ করে যোগ করবেন সেগুলো এখানে (DATA-এর সাথে) সেভ হয় */
 if (!DATA.customCats) DATA.customCats = { income: [], expense: [] };
 if (!DATA.staff) DATA.staff = { pending: [], approved: [] };
+if (!DATA.investors) DATA.investors = [];
+if (!DATA.pdfs) DATA.pdfs = { project: null, invest: null };
 
 /* ---------- Firebase (ঐচ্ছিক ক্লাউড সিঙ্ক) ----------
    নিচের কনফিগটা আপনার নিজের Firebase প্রজেক্টের কনফিগ দিয়ে বদলে দিন।
@@ -468,6 +611,13 @@ let isAdmin = localStorage.getItem("munshiIsAdmin") === "true";
 let isStaff = localStorage.getItem("munshiIsStaff") === "true" && !isAdmin;
 let staffEmail = localStorage.getItem("munshiStaffEmail") || null;
 function canEnterData(){ return isAdmin || isStaff; }
+
+let investorSession = null;
+(function restoreInvestorSession(){
+  const email = localStorage.getItem("munshiInvestorEmail");
+  const id = localStorage.getItem("munshiInvestorId");
+  if (email && id) investorSession = { email, id };
+})();
 
 let currentYear = "all";
 let currentType = "income";
@@ -787,8 +937,45 @@ function applyAdminUI(){
   }
   if (isAdmin) renderStaffLists();
 
+  const investorAdminCard = document.getElementById("investorAdminCard");
+  const investorNavCard = document.getElementById("investorNavCard");
+  investorAdminCard.classList.toggle("admin-hidden", !isAdmin);
+  if (investorNavCard) investorNavCard.classList.toggle("admin-hidden", !isAdmin);
+  if (!isAdmin && investorAdminCard.classList.contains("open")) {
+    investorAdminCard.classList.remove("open");
+    if (investorNavCard) investorNavCard.classList.remove("active");
+  }
+  if (isAdmin) renderInvestorAdmin();
+
+  document.getElementById("pdfAdminControls").classList.toggle("admin-hidden", !isAdmin);
+
   publicNote.style.display = canEnter ? "none" : "block";
   actionsHead.textContent = "";
+  applyViewMode();
+}
+
+function applyViewMode(){
+  const publicView = document.getElementById("publicView");
+  const dashboardView = document.getElementById("dashboardView");
+  const investorView = document.getElementById("investorView");
+  const investorBtn = document.getElementById("investorBtn");
+
+  if (isAdmin || isStaff) {
+    publicView.style.display = "none";
+    dashboardView.style.display = "block";
+    investorView.style.display = "none";
+  } else if (investorSession) {
+    publicView.style.display = "none";
+    dashboardView.style.display = "none";
+    investorView.style.display = "block";
+    renderInvestorOwnView();
+  } else {
+    publicView.style.display = "block";
+    dashboardView.style.display = "none";
+    investorView.style.display = "none";
+  }
+  investorBtn.textContent = investorSession ? "🔓 ইনভেস্টর লগআউট" : "💼 ইনভেস্টর লগইন";
+  investorBtn.style.display = (isAdmin || isStaff) ? "none" : "inline-flex";
 }
 
 function renderStaffLists(){
@@ -824,7 +1011,7 @@ function renderStaffLists(){
       const row = document.createElement("div");
       row.className = "req-row";
       row.innerHTML = `
-        <div class="req-info"><b>${r.name || r.email}</b><span>${r.email}</span></div>
+        <div class="req-info"><b>${r.name || r.email} ${r.employeeId ? "— " + r.employeeId : ""}</b><span>${r.email}</span></div>
         <div class="req-actions">
           <button class="revoke" data-id="${r.id}">এক্সেস বাতিল</button>
         </div>`;
@@ -832,6 +1019,14 @@ function renderStaffLists(){
     });
     apprWrap.querySelectorAll(".revoke").forEach(b=> b.onclick = () => revokeStaff(b.dataset.id));
   }
+}
+
+function generateEmployeeId(){
+  let id;
+  do {
+    id = "EMP" + Math.floor(1000 + Math.random()*9000);
+  } while ((DATA.staff.approved || []).find(r => r.employeeId === id));
+  return id;
 }
 
 function revokeStaff(id){
@@ -844,15 +1039,47 @@ function approveStaff(id){
   if (idx === -1) return;
   const [req] = DATA.staff.pending.splice(idx,1);
   const exists = (DATA.staff.approved || []).find(r=>r.email===req.email);
-  if (!exists) DATA.staff.approved.push(req);
-  saveState();
-  renderStaffLists();
+  if (!exists) {
+    req.employeeId = generateEmployeeId();
+    DATA.staff.approved.push(req);
+    saveState();
+    renderStaffLists();
+    alert("অনুমোদিত হয়েছে। স্টাফকে তার Employee ID (" + req.employeeId + ") জানিয়ে দিন — এরপর থেকে সে শুধু এই আইডি ও পাসওয়ার্ড দিয়ে লগইন করতে পারবে।");
+  } else {
+    saveState();
+    renderStaffLists();
+  }
 }
 function rejectStaff(id){
   DATA.staff.pending = (DATA.staff.pending || []).filter(r=>r.id!==id);
   saveState();
   renderStaffLists();
 }
+
+function handlePdfUpload(inputId, statusId, key){
+  document.getElementById(inputId).addEventListener("change", (ev)=>{
+    const file = ev.target.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById(statusId);
+    if (file.size > 700 * 1024) {
+      statusEl.textContent = "ফাইলটা অনেক বড় (৭০০ KB-এর বেশি) — ছোট/কমপ্রেসড PDF ব্যবহার করুন।";
+      statusEl.style.color = "var(--red)";
+      ev.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      DATA.pdfs[key] = reader.result;
+      saveState();
+      statusEl.textContent = "✅ আপলোড হয়েছে (" + file.name + ")";
+      statusEl.style.color = "var(--mid)";
+      ev.target.value = "";
+    };
+    reader.readAsDataURL(file);
+  });
+}
+handlePdfUpload("projectPdfInput", "projectPdfStatus", "project");
+handlePdfUpload("investPdfInput", "investPdfStatus", "invest");
 
 document.getElementById("resetStaffBtn").addEventListener("click", () => {
   const ok = confirm("আগে যারা এক্সেস চেয়েছে বা পেয়েছে তাদের সবার তথ্য মুছে ফেলা হবে — তারা আবার নতুন করে অনুরোধ পাঠাতে পারবে। এগিয়ে যেতে চান?");
@@ -862,6 +1089,182 @@ document.getElementById("resetStaffBtn").addEventListener("click", () => {
   renderStaffLists();
   alert("স্টাফ তালিকা রিসেট হয়ে গেছে।");
 });
+
+/* ---------- Investor: public form, admin panel, investor login ---------- */
+function money2(n){ return "৳" + Math.round(n||0).toLocaleString("bn-BD"); }
+
+function openModal(id){ document.getElementById(id).style.display = "flex"; }
+function closeModal(id){ document.getElementById(id).style.display = "none"; }
+
+document.getElementById("btnInvestNow").addEventListener("click", () => openModal("investFormOverlay"));
+document.getElementById("investFormClose").addEventListener("click", () => closeModal("investFormOverlay"));
+document.getElementById("investFormOverlay").addEventListener("click", (ev)=>{
+  if (ev.target.id === "investFormOverlay") closeModal("investFormOverlay");
+});
+
+document.getElementById("btnProjectInfo").addEventListener("click", () => {
+  document.getElementById("pdfInfoTitle").textContent = "Project সম্পর্কে";
+  document.getElementById("pdfInfoBody").textContent = "মুন্সী এগ্রো প্রজেক্ট প্ল্যানের সম্পূর্ণ পিডিএফ দেখতে নিচের বাটনে ক্লিক করুন।";
+  document.getElementById("pdfInfoLink").href = (DATA.pdfs && DATA.pdfs.project) ? DATA.pdfs.project : "project-plan.pdf";
+  openModal("pdfInfoOverlay");
+});
+document.getElementById("btnInvestInfo").addEventListener("click", () => {
+  document.getElementById("pdfInfoTitle").textContent = "Invest সম্পর্কে";
+  document.getElementById("pdfInfoBody").textContent = "ইনভেস্ট প্ল্যানের সম্পূর্ণ পিডিএফ দেখতে নিচের বাটনে ক্লিক করুন।";
+  document.getElementById("pdfInfoLink").href = (DATA.pdfs && DATA.pdfs.invest) ? DATA.pdfs.invest : "invest-plan.pdf";
+  openModal("pdfInfoOverlay");
+});
+document.getElementById("pdfInfoClose").addEventListener("click", () => closeModal("pdfInfoOverlay"));
+document.getElementById("pdfInfoOverlay").addEventListener("click", (ev)=>{
+  if (ev.target.id === "pdfInfoOverlay") closeModal("pdfInfoOverlay");
+});
+
+document.getElementById("investorForm").addEventListener("submit", (ev)=>{
+  ev.preventDefault();
+  const name = document.getElementById("invName").value.trim();
+  const email = document.getElementById("invEmail").value.trim().toLowerCase();
+  const phone = document.getElementById("invPhone").value.trim();
+  const nid = document.getElementById("invNid").value.trim();
+  const age = parseInt(document.getElementById("invAge").value, 10);
+  const amount = parseInt(document.getElementById("invAmount").value, 10);
+  const interest = parseInt(document.getElementById("invInterest").value, 10);
+
+  if (!name || !email || !phone || !nid || !age || !amount || !interest) {
+    alert("দয়া করে সব ঘর পূরণ করুন।");
+    return;
+  }
+  if (age < 23 || age > 80) {
+    alert("বয়স অবশ্যই ২৩ থেকে ৮০-এর মধ্যে হতে হবে।");
+    return;
+  }
+
+  const id = "INV" + Math.floor(100000 + Math.random()*900000);
+  const record = {
+    id, name, email, phone, nid, age, amount, interest,
+    submittedAt: new Date().toISOString()
+  };
+  DATA.investors.push(record);
+  saveState();
+  if (isAdmin) renderInvestorAdmin();
+
+  document.getElementById("investorForm").reset();
+  closeModal("investFormOverlay");
+  alert(
+    "সফলভাবে সাবমিট হয়েছে! আপনার ইনভেস্টর আইডি: " + id +
+    " — এটা এবং আপনার ইমেইল (" + email + ") ভবিষ্যতে 'ইনভেস্টর লগইন'-এ ব্যবহার করে আপনার তথ্য দেখতে পারবেন। আইডিটা সংরক্ষণ করে রাখুন।"
+  );
+});
+
+function renderInvestorAdmin(){
+  const list = DATA.investors || [];
+  document.getElementById("invStatCount").textContent = list.length.toLocaleString("bn-BD");
+  const totalAmount = list.reduce((s,r)=> s + (r.amount||0), 0);
+  document.getElementById("invStatAmount").textContent = money2(totalAmount);
+  const avgInterest = list.length ? (list.reduce((s,r)=> s + (r.interest||0), 0) / list.length) : 0;
+  document.getElementById("invStatInterest").textContent = Math.round(avgInterest) + "%";
+
+  const amtTiers = {};
+  const intTiers = {};
+  list.forEach(r=>{
+    amtTiers[r.amount] = (amtTiers[r.amount]||0) + 1;
+    intTiers[r.interest] = (intTiers[r.interest]||0) + 1;
+  });
+  const amtBody = document.getElementById("invAmountBreakdown");
+  amtBody.innerHTML = "";
+  Object.keys(amtTiers).sort((a,b)=>a-b).forEach(k=>{
+    amtBody.innerHTML += `<tr><td>${money2(k)}</td><td class="amt in">${amtTiers[k]} জন</td></tr>`;
+  });
+  const intBody = document.getElementById("invInterestBreakdown");
+  intBody.innerHTML = "";
+  Object.keys(intTiers).sort((a,b)=>a-b).forEach(k=>{
+    intBody.innerHTML += `<tr><td>${k}%</td><td class="amt ex">${intTiers[k]} জন</td></tr>`;
+  });
+
+  const tbody = document.getElementById("investorTableBody");
+  tbody.innerHTML = "";
+  document.getElementById("investorEmpty").style.display = list.length ? "none" : "block";
+  [...list].reverse().forEach(r=>{
+    const tr = document.createElement("tr");
+    const d = new Date(r.submittedAt);
+    const dateStr = isNaN(d) ? "" : d.toLocaleDateString("bn-BD");
+    tr.innerHTML = `
+      <td>${r.id}</td><td>${r.name}</td><td>${r.email}</td><td>${r.phone||""}</td><td>${r.nid||""}</td>
+      <td>${r.age}</td><td class="amt in">${money2(r.amount)}</td><td>${r.interest}%</td><td>${dateStr}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById("downloadInvestorExcelBtn").addEventListener("click", () => {
+  const list = DATA.investors || [];
+  let html = "<table><tr><th>আইডি</th><th>নাম</th><th>ইমেইল</th><th>ফোন</th><th>NID</th><th>বয়স</th><th>পরিমাণ</th><th>ইন্টারেস্ট</th><th>তারিখ</th></tr>";
+  list.forEach(r=>{
+    const d = new Date(r.submittedAt);
+    const dateStr = isNaN(d) ? "" : d.toLocaleDateString("bn-BD");
+    html += `<tr><td>${r.id}</td><td>${r.name}</td><td>${r.email}</td><td>${r.phone||""}</td><td>${r.nid||""}</td><td>${r.age}</td><td>${r.amount}</td><td>${r.interest}</td><td>${dateStr}</td></tr>`;
+  });
+  html += "</table>";
+  const blob = new Blob(["\ufeff" + html], { type: "application/vnd.ms-excel" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "investors.xls";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("investorBtn").addEventListener("click", () => {
+  if (investorSession) {
+    const ok = confirm("ইনভেস্টর লগইন থেকে বের হতে চান?");
+    if (!ok) return;
+    investorSession = null;
+    localStorage.removeItem("munshiInvestorEmail");
+    localStorage.removeItem("munshiInvestorId");
+    applyViewMode();
+    return;
+  }
+  const email = (prompt("আপনার ইমেইল দিন:") || "").trim().toLowerCase();
+  if (!email) return;
+  const id = (prompt("আপনার ইনভেস্টর আইডি দিন:") || "").trim().toUpperCase();
+  if (!id) return;
+  const match = (DATA.investors || []).find(r => r.email === email && r.id.toUpperCase() === id);
+  if (!match) {
+    alert("এই ইমেইল ও আইডি দিয়ে কোনো ইনভেস্টর পাওয়া যায়নি। ইনভেস্ট করতে 'Invest করুন' বাটন ব্যবহার করুন।");
+    return;
+  }
+  investorSession = { email: match.email, id: match.id };
+  localStorage.setItem("munshiInvestorEmail", match.email);
+  localStorage.setItem("munshiInvestorId", match.id);
+  applyViewMode();
+});
+
+function renderInvestorOwnView(){
+  if (!investorSession) return;
+  const match = (DATA.investors || []).find(r => r.email === investorSession.email && r.id === investorSession.id);
+  const nameSpan = document.getElementById("investorNameSpan");
+  const tbody = document.getElementById("investorOwnDataBody");
+  tbody.innerHTML = "";
+  if (!match) {
+    nameSpan.textContent = "";
+    tbody.innerHTML = `<tr><td>তথ্য পাওয়া যায়নি।</td></tr>`;
+    return;
+  }
+  nameSpan.textContent = match.name;
+  const d = new Date(match.submittedAt);
+  const dateStr = isNaN(d) ? "" : d.toLocaleDateString("bn-BD");
+  tbody.innerHTML = `
+    <tr><td>ইনভেস্টর আইডি</td><td>${match.id}</td></tr>
+    <tr><td>ইমেইল</td><td>${match.email}</td></tr>
+    <tr><td>ফোন</td><td>${match.phone||""}</td></tr>
+    <tr><td>NID</td><td>${match.nid||""}</td></tr>
+    <tr><td>বয়স</td><td>${match.age}</td></tr>
+    <tr><td>ইনভেস্টমেন্ট পরিমাণ</td><td class="amt in">${money2(match.amount)}</td></tr>
+    <tr><td>ইন্টারেস্ট</td><td>${match.interest}%</td></tr>
+    <tr><td>জমা দেওয়ার তারিখ</td><td>${dateStr}</td></tr>
+  `;
+}
 
 document.getElementById("addStaffDirectBtn").addEventListener("click", () => {
   const nameInput = document.getElementById("staffNameInput");
@@ -879,11 +1282,12 @@ document.getElementById("addStaffDirectBtn").addEventListener("click", () => {
     alert("এই ইমেইল দিয়ে আগে থেকেই একজন স্টাফ অনুমোদিত আছে।");
     return;
   }
-  DATA.staff.approved.push({ id: makeId(), email, password, name });
+  const employeeId = generateEmployeeId();
+  DATA.staff.approved.push({ id: makeId(), employeeId, email, password, name });
   saveState();
   nameInput.value = ""; emailInput.value = ""; passInput.value = "";
   renderStaffLists();
-  alert("স্টাফ যোগ হয়ে গেছে। তাকে এই ইমেইল ও পাসওয়ার্ড জানিয়ে দিন — এটা দিয়ে সে লগইন করে এন্ট্রি দিতে পারবে।");
+  alert("স্টাফ যোগ হয়ে গেছে। তার Employee ID: " + employeeId + " — এটা ও পাসওয়ার্ড তাকে জানিয়ে দিন, এটা দিয়ে সে লগইন করে এন্ট্রি দিতে পারবে।");
 });
 
 /* ---------- nav card panel switching ---------- */
@@ -940,32 +1344,44 @@ document.getElementById("staffBtn").addEventListener("click", () => {
     renderAll();
     return;
   }
-  const email = (prompt("আপনার ইমেইল দিন:") || "").trim().toLowerCase();
-  if (!email) return;
-  const password = prompt("আপনার পাসওয়ার্ড দিন:");
-  if (password === null || password === "") { alert("পাসওয়ার্ড দিতে হবে।"); return; }
 
-  const approved = (DATA.staff.approved || []).find(r => r.email === email);
-  if (approved) {
+  const empId = (prompt("যদি অ্যাডমিন আপনাকে আগে থেকেই একটা Employee ID দিয়ে থাকেন, সেটা এখানে দিন (না থাকলে খালি রেখে OK চাপুন):") || "").trim().toUpperCase();
+
+  if (empId) {
+    const password = prompt("আপনার পাসওয়ার্ড দিন:");
+    if (password === null || password === "") { alert("পাসওয়ার্ড দিতে হবে।"); return; }
+    const approved = (DATA.staff.approved || []).find(r => (r.employeeId||"").toUpperCase() === empId);
+    if (!approved) { alert("এই Employee ID দিয়ে কোনো স্টাফ পাওয়া যায়নি।"); return; }
     if (approved.password !== password) { alert("পাসওয়ার্ড ভুল হয়েছে।"); return; }
     isStaff = true;
-    staffEmail = email;
+    staffEmail = approved.email;
     localStorage.setItem("munshiIsStaff", "true");
-    localStorage.setItem("munshiStaffEmail", email);
+    localStorage.setItem("munshiStaffEmail", approved.email);
     applyAdminUI();
     renderAll();
+    return;
+  }
+
+  const email = (prompt("এটাই আপনার প্রথমবার হলে — আপনার ইমেইল দিন:") || "").trim().toLowerCase();
+  if (!email) return;
+  const password = prompt("একটা পাসওয়ার্ড ঠিক করুন:");
+  if (password === null || password === "") { alert("পাসওয়ার্ড দিতে হবে।"); return; }
+
+  const approvedByEmail = (DATA.staff.approved || []).find(r => r.email === email);
+  if (approvedByEmail) {
+    alert("এই ইমেইল দিয়ে আপনি ইতিমধ্যে অনুমোদিত — অ্যাডমিনের কাছ থেকে আপনার Employee ID টা নিয়ে পরের বার সেটা দিয়ে লগইন করুন।");
     return;
   }
 
   const name = prompt("আপনার নাম লিখুন (ঐচ্ছিক):") || "";
   const alreadyPending = (DATA.staff.pending || []).find(r => r.email === email);
   if (alreadyPending) {
-    alert("এই ইমেইল দিয়ে আপনার একটা অনুরোধ ইতিমধ্যে অ্যাডমিনের অনুমোদনের অপেক্ষায় আছে। অ্যাডমিন অনুমোদন দিলে এই একই ইমেইল-পাসওয়ার্ড দিয়ে লগইন করতে পারবেন।");
+    alert("এই ইমেইল দিয়ে আপনার একটা অনুরোধ ইতিমধ্যে অ্যাডমিনের অনুমোদনের অপেক্ষায় আছে। অনুমোদনের পর অ্যাডমিন আপনাকে একটা Employee ID দেবেন, সেটা দিয়ে পরে লগইন করবেন।");
     return;
   }
   DATA.staff.pending.push({ id: makeId(), email, password, name: name.trim() });
   saveState();
-  alert("আপনার অনুরোধ পাঠানো হয়েছে। অ্যাডমিন 'স্টাফ ব্যবস্থাপনা' থেকে অনুমোদন দিলে আপনি এই একই ইমেইল-পাসওয়ার্ড দিয়ে লগইন করে এন্ট্রি দিতে পারবেন।");
+  alert("আপনার অনুরোধ পাঠানো হয়েছে। অ্যাডমিন 'স্টাফ ব্যবস্থাপনা' থেকে অনুমোদন দিলে তিনি আপনাকে একটা Employee ID দেবেন — এরপর থেকে শুধু সেই আইডি ও এই পাসওয়ার্ড দিয়ে লগইন করতে পারবেন।");
 });
 
 function deleteEntry(id){
@@ -1049,6 +1465,8 @@ function startApp(){
 function normalizeData(d){
   if (!d.customCats) d.customCats = { income: [], expense: [] };
   if (!d.staff) d.staff = { pending: [], approved: [] };
+  if (!d.investors) d.investors = [];
+  if (!d.pdfs) d.pdfs = { project: null, invest: null };
   return d;
 }
 
