@@ -131,8 +131,9 @@ a:focus-visible, button:focus-visible {
   align-items: center;
 }
 .brand-logo {
-  height: 40px;
+  height: 34px;
   width: auto;
+  max-width: none;
   display: block;
 }
 .brand:hover { text-decoration: none; color: var(--harvest-deep); }
