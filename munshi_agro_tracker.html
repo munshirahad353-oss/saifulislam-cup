@@ -146,11 +146,30 @@
   .bulk-total { text-align: left; font-size: 14px; color: var(--muted); margin: -2px 0 14px; font-weight: 600; }
   .bulk-total b { color: var(--dark); }
   label { font-size: 13px; color: var(--muted); font-weight: 600; display: block; margin-bottom: 5px; }
-  select, input[type=number], input[type=text], input[type=email], input[type=tel] {
+  select, input[type=number], input[type=text], input[type=email], input[type=tel], input[type=search] {
     width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--soft);
     font-family: inherit; font-size: 15px; background: var(--bg); color: var(--text);
   }
   select:focus, input:focus { outline: 2px solid var(--mid); outline-offset: 1px; }
+  .table-toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+  .table-toolbar .table-search { flex: 1 1 220px; }
+  .table-toolbar .btn-outline {
+    flex: 0 0 auto; width: auto; padding: 10px 16px; border-radius: 10px;
+    border: 1.5px solid var(--soft); background: var(--white); color: var(--dark);
+    font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .table-toolbar .btn-outline:hover { background: var(--soft); }
+  .load-status {
+    display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .load-status .spinner {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--soft); border-top-color: var(--dark);
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .load-status .spinner { animation: none; } }
   .btn {
     padding: 12px 18px; border-radius: 10px; border: none; background: var(--dark); color: white;
     font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%;
@@ -487,6 +506,14 @@
   <div class="card section-panel" id="tableCard" data-panel-id="panelTable">
     <h2 id="entriesTitle">এন্ট্রি তালিকা</h2>
     <p class="view-note" id="publicNote" style="display:none;">এটি শুধু দেখার জন্য (পাবলিক ভিউ)। এন্ট্রি যোগ বা মুছতে অ্যাডমিন লগইন করুন।</p>
+    <div class="load-status" id="cloudLoadStatus" style="display:none;">
+      <span class="spinner" aria-hidden="true"></span>
+      <span>ক্লাউড থেকে সর্বশেষ ডেটা সিঙ্ক হচ্ছে…</span>
+    </div>
+    <div class="table-toolbar">
+      <input type="search" id="entrySearchInput" class="table-search" placeholder="🔍 বিবরণ বা ক্যাটাগরি দিয়ে খুঁজুন…" aria-label="এন্ট্রি খুঁজুন">
+      <button type="button" class="btn-outline" id="exportCsvBtn">⬇️ CSV ডাউনলোড</button>
+    </div>
     <div class="table-wrap">
       <table id="entriesTable">
         <thead>
@@ -865,6 +892,7 @@ let currentWeek = "all"; // "YYYY-MM-DD" (week's Monday) or "all"
 let currentType = "income";
 let currentMode = "single";
 let bulkRowCount = 0;
+let entrySearchQuery = "";
 
 const BN_MONTHS = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
 const BN_DIGITS = ["০","১","২","৩","৪","৫","৬","৭","৮","৯"];
@@ -915,6 +943,15 @@ function getActiveEntries(){
   if (viewMode === "week") return entriesForWeek(currentWeek);
   if (viewMode === "day") return entriesForDay(todayISO());
   return [];
+}
+
+function applySearchFilter(list){
+  const q = entrySearchQuery.trim().toLowerCase();
+  if (!q) return list;
+  return list.filter(e =>
+    (e.note && e.note.toLowerCase().includes(q)) ||
+    (e.category && e.category.toLowerCase().includes(q))
+  );
 }
 
 function renderStats(){
@@ -1191,7 +1228,7 @@ function updateBulkTotal(){
 
 function renderTable(){
   const body = document.getElementById("entriesBody");
-  const list = getActiveEntries().slice().sort((a, b) => {
+  const list = applySearchFilter(getActiveEntries()).slice().sort((a, b) => {
     if (a.date && b.date) return b.date.localeCompare(a.date);
     if (a.date) return -1;
     if (b.date) return 1;
@@ -1204,6 +1241,9 @@ function renderTable(){
     viewMode === "week" ? (currentWeek === "all" ? "সব এন্ট্রি (সপ্তাহভিত্তিক)" : (weekLabel(currentWeek) + "-এর এন্ট্রি")) :
     `<span class="live-dot"></span>আজকের এন্ট্রি (লাইভ)`;
   document.getElementById("emptyMsg").style.display = list.length ? "none" : "block";
+  document.getElementById("emptyMsg").textContent = entrySearchQuery.trim()
+    ? "খোঁজার সাথে মিলে এমন কোনো এন্ট্রি নেই।"
+    : "এখনও কোনো এন্ট্রি নেই। উপরের ফর্ম দিয়ে যোগ করুন।";
   list.forEach(e => {
     const tr = document.createElement("tr");
     tr.className = e.type === "income" ? "row-income" : "row-expense";
@@ -2267,7 +2307,8 @@ document.getElementById("entryForm").addEventListener("submit", (ev)=>{
   if (currentMode === "single") {
     const amount = parseFloat(document.getElementById("fAmount").value);
     const category = ensureCategory(currentType, document.getElementById("fCategory").value);
-    if (!amount || amount <= 0 || !category) return;
+    if (!amount || amount <= 0) { alert("সঠিক পরিমাণ (০-এর বেশি) লিখুন।"); return; }
+    if (!category) { alert("একটা ক্যাটাগরি বাছাই বা লিখুন।"); return; }
     DATA.entries.push({
       id: makeId(),
       type: currentType,
@@ -2300,7 +2341,7 @@ document.getElementById("entryForm").addEventListener("submit", (ev)=>{
         added++;
       }
     });
-    if (added === 0) return;
+    if (added === 0) { alert("অন্তত একটা সারিতে সঠিক পরিমাণ ও ক্যাটাগরি দিন।"); return; }
     document.getElementById("fBulkNote").value = "";
     resetBulkRows();
   }
@@ -2310,6 +2351,51 @@ document.getElementById("entryForm").addEventListener("submit", (ev)=>{
   renderAll();
   saveState();
 });
+
+/* ---------- search + CSV export ---------- */
+document.getElementById("entrySearchInput").addEventListener("input", (ev)=>{
+  entrySearchQuery = ev.target.value;
+  renderTable();
+});
+
+function exportEntriesCsv(){
+  const list = applySearchFilter(getActiveEntries()).slice().sort((a, b) => {
+    if (a.date && b.date) return b.date.localeCompare(a.date);
+    if (a.date) return -1;
+    if (b.date) return 1;
+    return 0;
+  });
+  if (!list.length) { alert("ডাউনলোড করার মতো কোনো এন্ট্রি নেই।"); return; }
+
+  const csvEscape = (val) => {
+    const s = String(val == null ? "" : val);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const header = ["তারিখ", "বছর", "বিবরণ", "ক্যাটাগরি", "ধরন", "পরিমাণ"];
+  const rows = list.map(e => [
+    e.date || "",
+    e.year || "",
+    e.note || "",
+    e.category || "",
+    e.type === "income" ? "আয়" : "খরচ",
+    e.amount
+  ]);
+  const csv = "\uFEFF" + [header, ...rows].map(r => r.map(csvEscape).join(",")).join("\r\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const today = new Date();
+  const stamp = today.getFullYear() + String(today.getMonth()+1).padStart(2,"0") + String(today.getDate()).padStart(2,"0");
+  a.href = url;
+  a.download = `munshi-agro-entries-${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById("exportCsvBtn").addEventListener("click", exportEntriesCsv);
 
 /* init */
 function startApp(){
@@ -2336,6 +2422,8 @@ function normalizeData(d){
 }
 
 if (cloudDocRef) {
+  const cloudLoadStatusEl = document.getElementById("cloudLoadStatus");
+  if (cloudLoadStatusEl) cloudLoadStatusEl.style.display = "flex";
   cloudDocRef.get().then(doc => {
     if (doc.exists) {
       DATA = normalizeData(doc.data());
@@ -2343,6 +2431,7 @@ if (cloudDocRef) {
       cloudDocRef.set(DATA);
     }
     startApp();
+    if (cloudLoadStatusEl) cloudLoadStatusEl.style.display = "none";
     cloudDocRef.onSnapshot(snap => {
       if (suppressCloudEcho) { suppressCloudEcho = false; return; }
       if (snap.exists) {
@@ -2355,6 +2444,7 @@ if (cloudDocRef) {
   }).catch(err => {
     console.error("Firebase load failed, using local data instead", err);
     startApp();
+    if (cloudLoadStatusEl) cloudLoadStatusEl.style.display = "none";
   });
 } else {
   startApp();
