@@ -112,7 +112,9 @@
   @media (max-width: 560px) { form.entry { grid-template-columns: 1fr; } }
   form.entry .full { grid-column: 1 / -1; }
   .seg { display: flex; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--soft); }
-  .seg button { flex: 1; padding: 10px; border: none; background: var(--white); color: var(--muted); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .seg button { flex: 1; min-width: 0; padding: 10px; border: none; background: var(--white); color: var(--muted); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .seg.period-seg { flex-wrap: wrap; border-radius: 10px; }
+  .seg.period-seg button { flex: 1 1 auto; min-width: 90px; font-size: 13.5px; padding: 9px 6px; }
   .seg button.on { background: var(--dark); color: white; }
   .seg button.on.in-c { background: var(--mid); color: white; }
   .seg button.on.ex-c { background: var(--brown); color: white; }
@@ -351,9 +353,11 @@
     </div>
   </div>
 
-  <div class="seg" id="viewModeSeg" style="margin-bottom:10px;">
+  <div class="seg period-seg" id="viewModeSeg" style="margin-bottom:10px;">
     <button type="button" data-mode="year" class="on">বছরভিত্তিক</button>
     <button type="button" data-mode="month">মাসভিত্তিক</button>
+    <button type="button" data-mode="week">সপ্তাহভিত্তিক</button>
+    <button type="button" data-mode="day">🔴 ডেইলি লাইভ</button>
   </div>
   <div class="tabs" id="yearTabs"></div>
 
@@ -840,8 +844,9 @@ let investorSession = null;
 })();
 
 let currentYear = "all";
-let viewMode = "year"; // "year" | "month"
+let viewMode = "year"; // "year" | "month" | "week" | "day"
 let currentMonth = "all"; // "YYYY-MM" or "all"
+let currentWeek = "all"; // "YYYY-MM-DD" (week's Monday) or "all"
 let currentType = "income";
 let currentMode = "single";
 let bulkRowCount = 0;
@@ -865,8 +870,36 @@ function getAvailableMonths(){
 function entriesForMonth(m){
   return DATA.entries.filter(e => e.date && (m === "all" ? true : e.date.slice(0,7) === m));
 }
+function getWeekStart(dateStr){
+  // Returns the Monday (YYYY-MM-DD) of the week containing dateStr.
+  const d = new Date(dateStr + "T00:00:00");
+  const dayNr = (d.getDay() + 6) % 7; // Mon=0 ... Sun=6
+  d.setDate(d.getDate() - dayNr);
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function weekLabel(w){
+  const start = new Date(w + "T00:00:00");
+  const end = new Date(start); end.setDate(end.getDate()+6);
+  const fmt = (d) => toBnNum(d.getDate()) + " " + BN_MONTHS[d.getMonth()];
+  return fmt(start) + " – " + fmt(end);
+}
+function getAvailableWeeks(){
+  const set = new Set();
+  DATA.entries.forEach(e => { if (e.date) set.add(getWeekStart(e.date)); });
+  return Array.from(set).sort().reverse();
+}
+function entriesForWeek(w){
+  return DATA.entries.filter(e => e.date && (w === "all" ? true : getWeekStart(e.date) === w));
+}
+function entriesForDay(d){
+  return DATA.entries.filter(e => e.date === d);
+}
 function getActiveEntries(){
-  return viewMode === "year" ? entriesForYear(currentYear) : entriesForMonth(currentMonth);
+  if (viewMode === "year") return entriesForYear(currentYear);
+  if (viewMode === "month") return entriesForMonth(currentMonth);
+  if (viewMode === "week") return entriesForWeek(currentWeek);
+  if (viewMode === "day") return entriesForDay(todayISO());
+  return [];
 }
 
 function renderStats(){
@@ -889,6 +922,7 @@ document.getElementById("viewModeSeg").addEventListener("click", (ev)=>{
   });
   closeAllPanels();
   renderAll();
+  if (mode === "day") openYearDetails();
 });
 
 function renderTabs(){
@@ -908,7 +942,7 @@ function renderTabs(){
       b.onclick = () => { toggleYearDetails(y); };
       wrap.appendChild(b);
     });
-  } else {
+  } else if (viewMode === "month") {
     const months = getAvailableMonths();
     const allBtn = document.createElement("div");
     allBtn.className = "tab" + (currentMonth==="all" ? " active" : "");
@@ -929,6 +963,33 @@ function renderTabs(){
       b.onclick = () => { toggleMonthDetails(m); };
       wrap.appendChild(b);
     });
+  } else if (viewMode === "week") {
+    const weeks = getAvailableWeeks();
+    const allBtn = document.createElement("div");
+    allBtn.className = "tab" + (currentWeek==="all" ? " active" : "");
+    allBtn.textContent = "সব সপ্তাহ";
+    allBtn.onclick = () => { toggleWeekDetails("all"); };
+    wrap.appendChild(allBtn);
+    if (!weeks.length) {
+      const note = document.createElement("div");
+      note.className = "empty";
+      note.style.padding = "10px 4px";
+      note.textContent = "তারিখসহ কোনো এন্ট্রি নেই — সপ্তাহভিত্তিক দেখতে এন্ট্রিতে তারিখ দিন।";
+      wrap.appendChild(note);
+    }
+    weeks.forEach(w => {
+      const b = document.createElement("div");
+      b.className = "tab" + (currentWeek===w ? " active" : "");
+      b.textContent = weekLabel(w);
+      b.onclick = () => { toggleWeekDetails(w); };
+      wrap.appendChild(b);
+    });
+  } else if (viewMode === "day") {
+    const b = document.createElement("div");
+    b.className = "tab active";
+    b.style.cursor = "default";
+    b.textContent = "🔴 আজ, " + fmtDate(todayISO());
+    wrap.appendChild(b);
   }
 }
 
@@ -958,6 +1019,16 @@ function toggleMonthDetails(m){
     return;
   }
   currentMonth = m;
+  renderAll();
+  openYearDetails();
+}
+
+function toggleWeekDetails(w){
+  if (currentWeek === w && isYearDetailsOpen()) {
+    closeAllPanels();
+    return;
+  }
+  currentWeek = w;
   renderAll();
   openYearDetails();
 }
@@ -1082,9 +1153,10 @@ function renderTable(){
   });
   body.innerHTML = "";
   document.getElementById("entriesTitle").textContent =
-    viewMode === "year"
-      ? (currentYear === "all" ? "সব এন্ট্রি" : (currentYear + " বছরের এন্ট্রি"))
-      : (currentMonth === "all" ? "সব এন্ট্রি (মাসভিত্তিক)" : (monthLabel(currentMonth) + "-এর এন্ট্রি"));
+    viewMode === "year" ? (currentYear === "all" ? "সব এন্ট্রি" : (currentYear + " বছরের এন্ট্রি")) :
+    viewMode === "month" ? (currentMonth === "all" ? "সব এন্ট্রি (মাসভিত্তিক)" : (monthLabel(currentMonth) + "-এর এন্ট্রি")) :
+    viewMode === "week" ? (currentWeek === "all" ? "সব এন্ট্রি (সপ্তাহভিত্তিক)" : (weekLabel(currentWeek) + "-এর এন্ট্রি")) :
+    "🔴 আজকের এন্ট্রি (লাইভ)";
   document.getElementById("emptyMsg").style.display = list.length ? "none" : "block";
   list.forEach(e => {
     const tr = document.createElement("tr");
