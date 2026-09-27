@@ -39,7 +39,7 @@
   * { box-sizing: border-box; }
   html, body { max-width: 100%; overflow-x: hidden; }
   body {
-    margin: 0; font-family: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, sans-serif;
+    margin: 0; font-family: 'Tiro Bangla', 'Noto Serif Bengali', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, sans-serif;
     background: var(--bg); color: var(--text); min-height: 100%;
   }
   .page-shell { max-width: 1000px; margin: 0 auto; }
@@ -113,6 +113,7 @@
   form.entry .full { grid-column: 1 / -1; }
   .seg { display: flex; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--soft); }
   .seg button { flex: 1; padding: 10px; border: none; background: var(--white); color: var(--muted); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .seg button.on { background: var(--dark); color: white; }
   .seg button.on.in-c { background: var(--mid); color: white; }
   .seg button.on.ex-c { background: var(--brown); color: white; }
   .seg.mode-seg button.on { background: var(--dark); color: white; }
@@ -305,6 +306,10 @@
     </div>
   </div>
 
+  <div class="seg" id="viewModeSeg" style="margin-bottom:10px;">
+    <button type="button" data-mode="year" class="on">বছরভিত্তিক</button>
+    <button type="button" data-mode="month">মাসভিত্তিক</button>
+  </div>
   <div class="tabs" id="yearTabs"></div>
 
   <div class="nav-grid" id="navGrid">
@@ -315,6 +320,7 @@
     <button type="button" class="nav-card admin-hidden" data-panel="panelStaff" id="staffNavCard"><span class="nav-icon">🛂</span><span class="nav-label">স্টাফ ব্যবস্থাপনা</span></button>
     <button type="button" class="nav-card admin-hidden" data-panel="panelMyWork" id="myWorkNavCard"><span class="nav-icon">🗓️</span><span class="nav-label">হাজিরা ও রিপোর্ট</span></button>
     <button type="button" class="nav-card admin-hidden" data-panel="panelInvestors" id="investorNavCard"><span class="nav-icon">💼</span><span class="nav-label">ইনভেস্টর</span></button>
+    <button type="button" class="nav-card admin-hidden" data-panel="panelManage" id="manageNavCard"><span class="nav-icon">⚙️</span><span class="nav-label">এডমিন ম্যানেজ</span></button>
   </div>
 
   <div class="card section-panel" id="entryCard" data-panel-id="panelEntry">
@@ -526,10 +532,11 @@
     </div>
   </div>
 
-  <div class="card">
-    <h2>PDF ব্যবস্থাপনা</h2>
+  <div class="card section-panel admin-hidden" id="manageCard" data-panel-id="panelManage">
+    <h2>এডমিন ম্যানেজ</h2>
+    <h3 style="font-size:15px;margin:0 0 8px;">PDF ব্যবস্থাপনা</h3>
     <p class="view-note">নিচে থেকে PDF আপলোড করলে সেটা ক্লাউডে সেভ হয়ে "Project সম্পর্কে" / "Invest সম্পর্কে" বাটনে সবাই (পাবলিকসহ) দেখতে পারবে। PDF ফাইল ছোট রাখুন (৩০০-৪০০ KB-এর মধ্যে হলে নিরাপদ), নাহলে সেভ ব্যর্থ হতে পারে। আপলোড না করলে, বিকল্প হিসেবে <b>project-plan.pdf</b> ও <b>invest-plan.pdf</b> নামে ফাইল GitHub রিপোতে HTML ফাইলের পাশে রাখলেও কাজ করবে।</p>
-    <div id="pdfAdminControls" class="admin-hidden">
+    <div id="pdfAdminControls">
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
         <label style="font-weight:700; font-size:13.5px; min-width:150px;">Project প্ল্যান PDF</label>
         <input type="file" id="projectPdfInput" accept="application/pdf">
@@ -586,6 +593,46 @@
     <h2 id="pdfInfoTitle">PDF</h2>
     <p id="pdfInfoBody" class="view-note"></p>
     <a id="pdfInfoLink" class="btn btn-primary" href="#" target="_blank" rel="noopener">PDF খুলুন</a>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editEntryOverlay" style="display:none;">
+  <div class="modal-box">
+    <button type="button" class="modal-close" id="editEntryClose">✕</button>
+    <h2>এন্ট্রি এডিট করুন</h2>
+    <form class="entry" id="editEntryForm">
+      <input type="hidden" id="eId">
+      <div class="full">
+        <label>ধরন</label>
+        <div class="seg" id="editTypeSeg">
+          <button type="button" data-type="income" class="in-c">আয়</button>
+          <button type="button" data-type="expense">খরচ</button>
+        </div>
+      </div>
+      <div>
+        <label>বছর</label>
+        <select id="eYear"></select>
+      </div>
+      <div>
+        <label>তারিখ</label>
+        <input type="date" id="eDate">
+      </div>
+      <div>
+        <label>খাত</label>
+        <input type="text" id="eCategory" list="catList">
+      </div>
+      <div class="full">
+        <label>পরিমাণ (টাকা)</label>
+        <input type="number" id="eAmount" min="0" step="1">
+      </div>
+      <div class="full">
+        <label>বিবরণ (ঐচ্ছিক)</label>
+        <input type="text" id="eNote">
+      </div>
+      <div class="full">
+        <button type="submit" class="btn">সেভ করুন</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -729,16 +776,37 @@ let investorSession = null;
 })();
 
 let currentYear = "all";
+let viewMode = "year"; // "year" | "month"
+let currentMonth = "all"; // "YYYY-MM" or "all"
 let currentType = "income";
 let currentMode = "single";
 let bulkRowCount = 0;
 
+const BN_MONTHS = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+const BN_DIGITS = ["০","১","২","৩","৪","৫","৬","৭","৮","৯"];
+function toBnNum(n){ return String(n).split("").map(ch => (ch>=0 && ch<=9) ? BN_DIGITS[ch] : ch).join(""); }
+function monthLabel(m){
+  const [y, mm] = m.split("-");
+  return BN_MONTHS[parseInt(mm,10)-1] + " " + toBnNum(y);
+}
+
 function entriesForYear(y){
   return DATA.entries.filter(e => y === "all" ? true : e.year === y);
 }
+function getAvailableMonths(){
+  const set = new Set();
+  DATA.entries.forEach(e => { if (e.date) set.add(e.date.slice(0,7)); });
+  return Array.from(set).sort().reverse();
+}
+function entriesForMonth(m){
+  return DATA.entries.filter(e => e.date && (m === "all" ? true : e.date.slice(0,7) === m));
+}
+function getActiveEntries(){
+  return viewMode === "year" ? entriesForYear(currentYear) : entriesForMonth(currentMonth);
+}
 
 function renderStats(){
-  const list = entriesForYear(currentYear);
+  const list = getActiveEntries();
   const inc = list.filter(e=>e.type==="income").reduce((a,e)=>a+e.amount,0);
   const exp = list.filter(e=>e.type==="expense").reduce((a,e)=>a+e.amount,0);
   document.getElementById("statIncome").textContent = money(inc);
@@ -746,21 +814,58 @@ function renderStats(){
   document.getElementById("statNet").textContent = money(inc-exp);
 }
 
+document.getElementById("viewModeSeg").addEventListener("click", (ev)=>{
+  const btn = ev.target.closest("button");
+  if (!btn) return;
+  const mode = btn.dataset.mode;
+  if (mode === viewMode) return;
+  viewMode = mode;
+  document.querySelectorAll("#viewModeSeg button").forEach(b=>{
+    b.classList.toggle("on", b.dataset.mode === viewMode);
+  });
+  closeAllPanels();
+  renderAll();
+});
+
 function renderTabs(){
   const wrap = document.getElementById("yearTabs");
   wrap.innerHTML = "";
-  const allBtn = document.createElement("div");
-  allBtn.className = "tab" + (currentYear==="all" ? " active" : "");
-  allBtn.textContent = "সব বছর";
-  allBtn.onclick = () => { toggleYearDetails("all"); };
-  wrap.appendChild(allBtn);
-  YEARS.forEach(y => {
-    const b = document.createElement("div");
-    b.className = "tab" + (currentYear===y ? " active" : "");
-    b.textContent = y + " বছর";
-    b.onclick = () => { toggleYearDetails(y); };
-    wrap.appendChild(b);
-  });
+
+  if (viewMode === "year") {
+    const allBtn = document.createElement("div");
+    allBtn.className = "tab" + (currentYear==="all" ? " active" : "");
+    allBtn.textContent = "সব বছর";
+    allBtn.onclick = () => { toggleYearDetails("all"); };
+    wrap.appendChild(allBtn);
+    YEARS.forEach(y => {
+      const b = document.createElement("div");
+      b.className = "tab" + (currentYear===y ? " active" : "");
+      b.textContent = y + " বছর";
+      b.onclick = () => { toggleYearDetails(y); };
+      wrap.appendChild(b);
+    });
+  } else {
+    const months = getAvailableMonths();
+    const allBtn = document.createElement("div");
+    allBtn.className = "tab" + (currentMonth==="all" ? " active" : "");
+    allBtn.textContent = "সব মাস";
+    allBtn.onclick = () => { toggleMonthDetails("all"); };
+    wrap.appendChild(allBtn);
+    if (!months.length) {
+      const note = document.createElement("div");
+      note.className = "empty";
+      note.style.padding = "10px 4px";
+      note.textContent = "তারিখসহ কোনো এন্ট্রি নেই — মাসভিত্তিক দেখতে এন্ট্রিতে তারিখ দিন।";
+      wrap.appendChild(note);
+    }
+    months.forEach(m => {
+      const b = document.createElement("div");
+      b.className = "tab" + (currentMonth===m ? " active" : "");
+      b.textContent = monthLabel(m);
+      b.onclick = () => { toggleMonthDetails(m); };
+      wrap.appendChild(b);
+    });
+  }
 }
 
 function isYearDetailsOpen(){
@@ -779,6 +884,16 @@ function toggleYearDetails(year){
     return;
   }
   currentYear = year;
+  renderAll();
+  openYearDetails();
+}
+
+function toggleMonthDetails(m){
+  if (currentMonth === m && isYearDetailsOpen()) {
+    closeAllPanels();
+    return;
+  }
+  currentMonth = m;
   renderAll();
   openYearDetails();
 }
@@ -895,7 +1010,7 @@ function updateBulkTotal(){
 
 function renderTable(){
   const body = document.getElementById("entriesBody");
-  const list = entriesForYear(currentYear).slice().sort((a, b) => {
+  const list = getActiveEntries().slice().sort((a, b) => {
     if (a.date && b.date) return b.date.localeCompare(a.date);
     if (a.date) return -1;
     if (b.date) return 1;
@@ -903,7 +1018,9 @@ function renderTable(){
   });
   body.innerHTML = "";
   document.getElementById("entriesTitle").textContent =
-    currentYear === "all" ? "সব এন্ট্রি" : (currentYear + " বছরের এন্ট্রি");
+    viewMode === "year"
+      ? (currentYear === "all" ? "সব এন্ট্রি" : (currentYear + " বছরের এন্ট্রি"))
+      : (currentMonth === "all" ? "সব এন্ট্রি (মাসভিত্তিক)" : (monthLabel(currentMonth) + "-এর এন্ট্রি"));
   document.getElementById("emptyMsg").style.display = list.length ? "none" : "block";
   list.forEach(e => {
     const tr = document.createElement("tr");
@@ -913,13 +1030,16 @@ function renderTable(){
       <td><span class="cat-pill">${e.category}</span></td>
       <td>${e.type === "income" ? "আয়" : "খরচ"}</td>
       <td class="amt ${e.type==='income'?'in':'ex'}">${money(e.amount)}</td>
-      <td>${isAdmin ? `<button class="del" data-id="${e.id}">মুছুন</button>` : ""}</td>
+      <td>${isAdmin ? `<button class="edit" data-id="${e.id}">এডিট</button> <button class="del" data-id="${e.id}">মুছুন</button>` : ""}</td>
     `;
     body.appendChild(tr);
   });
   if (isAdmin) {
     body.querySelectorAll(".del").forEach(btn=>{
       btn.onclick = () => deleteEntry(btn.dataset.id);
+    });
+    body.querySelectorAll(".edit").forEach(btn=>{
+      btn.onclick = () => openEditEntry(btn.dataset.id);
     });
   }
 }
@@ -928,7 +1048,7 @@ function renderCatSummaryFor(type){
   const bodyId = type === "income" ? "catSummaryIncomeBody" : "catSummaryExpenseBody";
   const emptyId = type === "income" ? "catSummaryIncomeEmpty" : "catSummaryExpenseEmpty";
   const body = document.getElementById(bodyId);
-  const list = entriesForYear(currentYear).filter(e => e.type === type);
+  const list = getActiveEntries().filter(e => e.type === type);
   const totals = {};
   list.forEach(e=>{
     totals[e.category] = (totals[e.category] || 0) + e.amount;
@@ -1067,7 +1187,14 @@ function applyAdminUI(){
   }
   if (isAdmin) renderInvestorAdmin();
 
-  document.getElementById("pdfAdminControls").classList.toggle("admin-hidden", !isAdmin);
+  const manageCard = document.getElementById("manageCard");
+  const manageNavCard = document.getElementById("manageNavCard");
+  manageCard.classList.toggle("admin-hidden", !isAdmin);
+  if (manageNavCard) manageNavCard.classList.toggle("admin-hidden", !isAdmin);
+  if (!isAdmin && manageCard.classList.contains("open")) {
+    manageCard.classList.remove("open");
+    if (manageNavCard) manageNavCard.classList.remove("active");
+  }
 
   publicNote.style.display = canEnter ? "none" : "block";
   actionsHead.textContent = "";
@@ -1777,6 +1904,74 @@ function deleteEntry(id){
   renderAll();
   saveState();
 }
+
+function openEditEntry(id){
+  if (!isAdmin) return;
+  const entry = DATA.entries.find(e => e.id === id);
+  if (!entry) return;
+
+  document.getElementById("eId").value = entry.id;
+  document.getElementById("eDate").value = entry.date || "";
+  document.getElementById("eCategory").value = entry.category || "";
+  document.getElementById("eAmount").value = entry.amount;
+  document.getElementById("eNote").value = entry.note || "";
+
+  const yearSel = document.getElementById("eYear");
+  yearSel.innerHTML = "";
+  YEARS.forEach(y=>{
+    const opt = document.createElement("option");
+    opt.value = y; opt.textContent = y + " বছর";
+    if (y === entry.year) opt.selected = true;
+    yearSel.appendChild(opt);
+  });
+
+  document.querySelectorAll("#editTypeSeg button").forEach(b=>{
+    b.classList.toggle("on", b.dataset.type === entry.type);
+  });
+
+  openModal("editEntryOverlay");
+}
+
+document.getElementById("editEntryClose").addEventListener("click", () => closeModal("editEntryOverlay"));
+document.getElementById("editEntryOverlay").addEventListener("click", (ev)=>{
+  if (ev.target.id === "editEntryOverlay") closeModal("editEntryOverlay");
+});
+document.getElementById("editTypeSeg").addEventListener("click", (ev)=>{
+  const btn = ev.target.closest("button");
+  if (!btn) return;
+  document.querySelectorAll("#editTypeSeg button").forEach(b=> b.classList.toggle("on", b === btn));
+});
+
+document.getElementById("editEntryForm").addEventListener("submit", (ev)=>{
+  ev.preventDefault();
+  if (!isAdmin) return;
+  const id = document.getElementById("eId").value;
+  const entry = DATA.entries.find(e => e.id === id);
+  if (!entry) return;
+
+  const type = document.querySelector("#editTypeSeg button.on").dataset.type;
+  const year = document.getElementById("eYear").value;
+  const date = document.getElementById("eDate").value || null;
+  const category = ensureCategory(type, document.getElementById("eCategory").value);
+  const amount = parseFloat(document.getElementById("eAmount").value);
+  const note = document.getElementById("eNote").value.trim();
+
+  if (!amount || amount <= 0 || !category) {
+    alert("সঠিক পরিমাণ ও খাত দিন।");
+    return;
+  }
+
+  entry.type = type;
+  entry.year = year;
+  entry.date = date;
+  entry.category = category;
+  entry.amount = amount;
+  entry.note = note;
+
+  saveState();
+  renderAll();
+  closeModal("editEntryOverlay");
+});
 
 function makeId(){
   return "e" + Date.now() + Math.random().toString(36).slice(2,7);

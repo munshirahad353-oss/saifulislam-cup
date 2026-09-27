@@ -20,7 +20,7 @@
   --white: #FFFFFF;
 
   --serif: 'Tiro Bangla', 'Noto Serif Bengali', Georgia, serif;
-  --sans: 'Hind Siliguri', 'Noto Sans Bengali', system-ui, sans-serif;
+  --sans: 'Tiro Bangla', 'Noto Serif Bengali', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, sans-serif;
 
   --max: 1080px;
   box-sizing: border-box;
@@ -342,6 +342,7 @@ a:focus-visible, button:focus-visible {
 }
 .fn-label { color: var(--ink-soft); flex: 0 0 auto; }
 .fn-value { color: var(--soil); font-weight: 600; text-align: right; }
+.field-notes-block { margin-top: 8px; }
 
 /* ---------- generic sections ---------- */
 .section {
@@ -353,6 +354,47 @@ a:focus-visible, button:focus-visible {
 .section-alt {
   background: var(--husk-deep);
 }
+
+/* ---------- info accordion (About / Focus / Projects / Contact) ---------- */
+.accordion {
+  border: 1px solid rgba(46,33,21,0.15);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--white);
+  margin-bottom: 28px;
+}
+.accordion-item + .accordion-item {
+  border-top: 1px solid rgba(46,33,21,0.12);
+}
+.accordion-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: var(--serif);
+  font-size: 19px;
+  color: var(--soil);
+  cursor: pointer;
+}
+.accordion-header:hover { background: var(--husk-deep); }
+.accordion-icon {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--paddy-deep);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.accordion-item.open .accordion-icon { transform: rotate(45deg); }
+.accordion-panel {
+  display: none;
+  padding: 4px 22px 26px;
+}
+.accordion-item.open .accordion-panel { display: block; }
 
 .about-grid {
   display: grid;
