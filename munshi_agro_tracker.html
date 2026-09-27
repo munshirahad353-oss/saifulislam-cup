@@ -182,6 +182,10 @@
   tbody tr:last-child td { border-bottom: none; }
   .amt.in { color: var(--mid); font-weight: 700; }
   .amt.ex { color: var(--brown); font-weight: 700; }
+  #entriesTable tbody tr.row-income { background: rgba(64,145,108,0.06); }
+  #entriesTable tbody tr.row-expense { background: rgba(141,91,43,0.06); }
+  #entriesTable tbody tr.row-income:hover { background: rgba(64,145,108,0.12); }
+  #entriesTable tbody tr.row-expense:hover { background: rgba(141,91,43,0.12); }
   .del { background: none; border: none; color: var(--red); cursor: pointer; font-size: 13px; padding: 4px 8px; }
   .empty { text-align: center; color: var(--muted); padding: 24px 0; font-size: 14px; }
   .table-wrap { overflow-x: auto; }
@@ -203,9 +207,27 @@
   .nav-card .nav-label { font-size: 13.5px; font-weight: 700; color: var(--dark); }
   .nav-card.active { border-color: var(--mid); background: var(--soft); }
   .nav-card.active .nav-icon { background: var(--white); }
-  .section-panel { display: none; }
-  .section-panel.open { display: block; }
-  .section-panel.admin-hidden { display: none !important; }
+  .section-panel {
+    display: block;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    transition: max-height 0.45s ease, opacity 0.35s ease, padding 0.45s ease, margin 0.45s ease;
+  }
+  .section-panel.open {
+    max-height: 4000px;
+    opacity: 1;
+    padding-top: 20px !important;
+    padding-bottom: 20px !important;
+    margin-bottom: 18px !important;
+  }
+  .section-panel.admin-hidden { display: none !important; max-height: 0 !important; }
+  @media (prefers-reduced-motion: reduce) {
+    .section-panel { transition: none; }
+  }
   .nav-card.admin-hidden { display: none !important; }
   .admin-hidden { display: none !important; }
   .cat-split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -267,15 +289,15 @@
 <div class="container" id="investorView" style="display:none;">
   <div class="stats">
     <div class="stat-card income">
-      <div class="label">ফার্মের মোট আয় (লাইভ)</div>
+      <div class="label">🌾 ফার্মের মোট আয় (লাইভ)</div>
       <div class="value" id="invLiveIncome">৳০</div>
     </div>
     <div class="stat-card expense">
-      <div class="label">ফার্মের মোট খরচ (লাইভ)</div>
+      <div class="label">🧾 ফার্মের মোট খরচ (লাইভ)</div>
       <div class="value" id="invLiveExpense">৳০</div>
     </div>
     <div class="stat-card net">
-      <div class="label">নিট মুনাফা (লাইভ)</div>
+      <div class="label">💰 নিট মুনাফা (লাইভ)</div>
       <div class="value" id="invLiveNet">৳০</div>
     </div>
   </div>
@@ -293,15 +315,15 @@
 <div class="container" id="dashboardView" style="display:none;">
   <div class="stats">
     <div class="stat-card income">
-      <div class="label">মোট আয়</div>
+      <div class="label">🐄 মোট আয়</div>
       <div class="value" id="statIncome">৳০</div>
     </div>
     <div class="stat-card expense">
-      <div class="label">মোট খরচ</div>
+      <div class="label">🧾 মোট খরচ</div>
       <div class="value" id="statExpense">৳০</div>
     </div>
     <div class="stat-card net">
-      <div class="label">নিট মুনাফা</div>
+      <div class="label">💰 নিট মুনাফা</div>
       <div class="value" id="statNet">৳০</div>
     </div>
   </div>
@@ -386,7 +408,7 @@
   </div>
 
   <div class="card section-panel" id="summaryCard" data-panel-id="panelSummary">
-    <h2>খাতভিত্তিক সারাংশ</h2>
+    <h2>📊 খাতভিত্তিক সারাংশ</h2>
     <div class="cat-split">
       <div>
         <h3 class="in-h">আয়ের খাত</h3>
@@ -412,7 +434,7 @@
   </div>
 
   <div class="card section-panel" id="chartCard" data-panel-id="panelChart">
-    <h2>বছরভিত্তিক আয়-ব্যয়</h2>
+    <h2>📈 বছরভিত্তিক আয়-ব্যয়</h2>
     <div class="chart-bars" id="chartBars"></div>
     <div class="legend">
       <span><i class="dot" style="background:var(--mid)"></i> আয়</span>
@@ -497,15 +519,15 @@
     <div id="investorPendingList" style="margin-bottom:20px;"><div class="empty">কোনো অপেক্ষমাণ ইনভেস্টর অনুরোধ নেই।</div></div>
     <div class="stats" style="margin-top:0;">
       <div class="stat-card income">
-        <div class="label">মোট ইনভেস্টর</div>
+        <div class="label">👥 মোট ইনভেস্টর</div>
         <div class="value" id="invStatCount">০</div>
       </div>
       <div class="stat-card net">
-        <div class="label">মোট ইনভেস্টমেন্ট</div>
+        <div class="label">💰 মোট ইনভেস্টমেন্ট</div>
         <div class="value" id="invStatAmount">৳০</div>
       </div>
       <div class="stat-card expense">
-        <div class="label">গড় ইন্টারেস্ট</div>
+        <div class="label">📈 গড় ইন্টারেস্ট</div>
         <div class="value" id="invStatInterest">০%</div>
       </div>
     </div>
@@ -1024,6 +1046,7 @@ function renderTable(){
   document.getElementById("emptyMsg").style.display = list.length ? "none" : "block";
   list.forEach(e => {
     const tr = document.createElement("tr");
+    tr.className = e.type === "income" ? "row-income" : "row-expense";
     tr.innerHTML = `
       <td>${fmtDate(e.date)}</td>
       <td>${e.note ? e.note : "—"}<div style="font-size:12px;color:var(--muted)">${e.year} বছর</div></td>

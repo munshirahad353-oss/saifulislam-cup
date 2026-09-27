@@ -191,4 +191,46 @@
   // Footer year.
   var yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+  // ---------- Lightbox (click a project-gallery image to enlarge) ----------
+  var galleryImgs = Array.prototype.slice.call(document.querySelectorAll(".project-gallery img"));
+  var lightbox = document.getElementById("lightboxOverlay");
+  var lightboxImg = document.getElementById("lightboxImg");
+  var lightboxCaption = document.getElementById("lightboxCaption");
+  var lightboxClose = document.getElementById("lightboxClose");
+  var lastFocused = null;
+
+  function openLightbox(img) {
+    var figure = img.closest("figure");
+    var caption = figure ? figure.querySelector("figcaption") : null;
+    lightboxImg.src = img.src;
+    lightboxImg.alt = img.alt || "";
+    lightboxCaption.textContent = caption ? caption.textContent : "";
+    lightbox.classList.add("open");
+    lightbox.setAttribute("aria-hidden", "false");
+    lastFocused = document.activeElement;
+    lightboxClose.focus();
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove("open");
+    lightbox.setAttribute("aria-hidden", "true");
+    lightboxImg.src = "";
+    document.body.style.overflow = "";
+    if (lastFocused && lastFocused.focus) lastFocused.focus();
+  }
+
+  if (lightbox && galleryImgs.length) {
+    galleryImgs.forEach(function (img) {
+      img.addEventListener("click", function () { openLightbox(img); });
+    });
+    lightboxClose.addEventListener("click", closeLightbox);
+    lightbox.addEventListener("click", function (e) {
+      if (e.target === lightbox) closeLightbox();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && lightbox.classList.contains("open")) closeLightbox();
+    });
+  }
 })();
