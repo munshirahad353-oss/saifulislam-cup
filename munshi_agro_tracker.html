@@ -63,6 +63,10 @@
   }
 
   .container { max-width: 1000px; margin: 0 auto; padding: 20px 16px 60px; }
+  #dashboardView { display: flex; flex-direction: column; }
+  #dashboardView.day-mode #tableCard { order: 1; }
+  #dashboardView.day-mode #summaryCard { order: 2; }
+  #dashboardView.day-mode #chartCard { display: none !important; }
 
   .stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin: -34px 0 20px; position: relative; z-index: 2; }
   .stat-card { min-width: 0; }
@@ -932,8 +936,9 @@ document.getElementById("viewModeSeg").addEventListener("click", (ev)=>{
     b.classList.toggle("on", b.dataset.mode === viewMode);
   });
   closeAllPanels();
+  setDayNavGridVisible(true);
+  document.getElementById("dashboardView").classList.remove("day-mode");
   renderAll();
-  if (mode === "day") openYearDetails();
 });
 
 function renderTabs(){
@@ -998,8 +1003,8 @@ function renderTabs(){
   } else if (viewMode === "day") {
     const b = document.createElement("div");
     b.className = "tab active";
-    b.style.cursor = "default";
     b.innerHTML = `<span class="live-dot"></span>আজ, ${fmtDate(todayISO())}`;
+    b.onclick = () => { toggleDayDetails(); };
     wrap.appendChild(b);
   }
 }
@@ -1055,6 +1060,36 @@ function openYearDetails(){
   });
   const summaryPanel = document.querySelector('[data-panel-id="panelSummary"]');
   if (summaryPanel) summaryPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function setDayNavGridVisible(visible){
+  const navGrid = document.getElementById("navGrid");
+  if (navGrid) navGrid.style.display = visible ? "" : "none";
+}
+
+function toggleDayDetails(){
+  if (isYearDetailsOpen()) {
+    closeAllPanels();
+    setDayNavGridVisible(true);
+    document.getElementById("dashboardView").classList.remove("day-mode");
+    return;
+  }
+  openDayDetails();
+}
+
+function openDayDetails(){
+  const panels = document.querySelectorAll(".section-panel");
+  const navCards = document.querySelectorAll(".nav-card");
+  panels.forEach(p => p.classList.remove("open"));
+  navCards.forEach(b => b.classList.remove("active"));
+  ["panelTable","panelSummary"].forEach(id=>{
+    const el = document.querySelector(`[data-panel-id="${id}"]`);
+    if (el) el.classList.add("open");
+  });
+  document.getElementById("dashboardView").classList.add("day-mode");
+  setDayNavGridVisible(false);
+  const tablePanel = document.querySelector('[data-panel-id="panelTable"]');
+  if (tablePanel) tablePanel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderChart(){
