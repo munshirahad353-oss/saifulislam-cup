@@ -114,6 +114,17 @@
   .seg { display: flex; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--soft); }
   .seg button { flex: 1; min-width: 0; padding: 10px; border: none; background: var(--white); color: var(--muted); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
   .seg.period-seg { flex-wrap: wrap; border-radius: 10px; }
+  .live-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--mid); margin-right: 6px; vertical-align: middle;
+    box-shadow: 0 0 0 0 rgba(64,145,108,0.5);
+    animation: livePulse 1.6s ease-out infinite;
+  }
+  @keyframes livePulse {
+    0% { box-shadow: 0 0 0 0 rgba(64,145,108,0.5); }
+    70% { box-shadow: 0 0 0 7px rgba(64,145,108,0); }
+    100% { box-shadow: 0 0 0 0 rgba(64,145,108,0); }
+  }
   .seg.period-seg button { flex: 1 1 auto; min-width: 90px; font-size: 13.5px; padding: 9px 6px; }
   .seg button.on { background: var(--dark); color: white; }
   .seg button.on.in-c { background: var(--mid); color: white; }
@@ -354,7 +365,7 @@
   </div>
 
   <div class="seg period-seg" id="viewModeSeg" style="margin-bottom:10px;">
-    <button type="button" data-mode="day">🔴 ডেইলি লাইভ</button>
+    <button type="button" data-mode="day">ডেইলি আপডেট</button>
     <button type="button" data-mode="week">সপ্তাহভিত্তিক</button>
     <button type="button" data-mode="month">মাসভিত্তিক</button>
     <button type="button" data-mode="year" class="on">বছরভিত্তিক</button>
@@ -988,7 +999,7 @@ function renderTabs(){
     const b = document.createElement("div");
     b.className = "tab active";
     b.style.cursor = "default";
-    b.textContent = "🔴 আজ, " + fmtDate(todayISO());
+    b.innerHTML = `<span class="live-dot"></span>আজ, ${fmtDate(todayISO())}`;
     wrap.appendChild(b);
   }
 }
@@ -1152,11 +1163,11 @@ function renderTable(){
     return 0;
   });
   body.innerHTML = "";
-  document.getElementById("entriesTitle").textContent =
+  document.getElementById("entriesTitle").innerHTML =
     viewMode === "year" ? (currentYear === "all" ? "সব এন্ট্রি" : (currentYear + " বছরের এন্ট্রি")) :
     viewMode === "month" ? (currentMonth === "all" ? "সব এন্ট্রি (মাসভিত্তিক)" : (monthLabel(currentMonth) + "-এর এন্ট্রি")) :
     viewMode === "week" ? (currentWeek === "all" ? "সব এন্ট্রি (সপ্তাহভিত্তিক)" : (weekLabel(currentWeek) + "-এর এন্ট্রি")) :
-    "🔴 আজকের এন্ট্রি (লাইভ)";
+    `<span class="live-dot"></span>আজকের এন্ট্রি (লাইভ)`;
   document.getElementById("emptyMsg").style.display = list.length ? "none" : "block";
   list.forEach(e => {
     const tr = document.createElement("tr");
