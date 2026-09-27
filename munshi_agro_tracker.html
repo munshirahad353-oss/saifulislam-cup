@@ -302,6 +302,29 @@
     </div>
   </div>
   <div class="card">
+    <h2>📅 বছরভিত্তিক / মাসভিত্তিক আয়-ব্যয়</h2>
+    <div class="seg" id="invPeriodModeSeg" style="margin-bottom:10px;">
+      <button type="button" data-mode="year" class="on">বছরভিত্তিক</button>
+      <button type="button" data-mode="month">মাসভিত্তিক</button>
+    </div>
+    <div class="tabs" id="invPeriodTabs"></div>
+    <div class="stats" style="margin-top:14px;">
+      <div class="stat-card income">
+        <div class="label">🌾 মোট আয়</div>
+        <div class="value" id="invPeriodIncome">৳০</div>
+      </div>
+      <div class="stat-card expense">
+        <div class="label">🧾 মোট খরচ</div>
+        <div class="value" id="invPeriodExpense">৳০</div>
+      </div>
+      <div class="stat-card net">
+        <div class="label">💰 নিট মুনাফা</div>
+        <div class="value" id="invPeriodNet">৳০</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
     <h2>স্বাগতম, <span id="investorNameSpan"></span></h2>
     <p class="view-note">আপনার জমা দেওয়া ইনভেস্টমেন্ট তথ্য নিচে দেখানো হলো। উপরের সংখ্যাগুলো পুরো ফার্মের সার্বিক, লাইভ আয়-ব্যয়ের অবস্থা — সবসময় হালনাগাদ থাকে।</p>
     <div class="table-wrap">
@@ -655,6 +678,25 @@
         <button type="submit" class="btn">সেভ করুন</button>
       </div>
     </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmDeleteOverlay" style="display:none;">
+  <div class="modal-box">
+    <button type="button" class="modal-close" id="confirmDeleteClose">✕</button>
+    <h2 style="color:#b3261e;">⚠️ এন্ট্রি মুছে ফেলবেন?</h2>
+    <p class="view-note"><b>ভালো করে যাচাই করে নিশ্চিত হন</b> — এই এন্ট্রিটা একবার মুছে ফেললে আর ফিরিয়ে আনা যাবে না।</p>
+    <div class="table-wrap" style="margin:14px 0;">
+      <table>
+        <tbody id="confirmDeleteDetails"></tbody>
+      </table>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button type="button" id="confirmDeleteCancel"
+        style="flex:1; border:1.5px solid var(--soft); border-radius:10px; padding:12px; background:var(--white); color:var(--dark); font-family:inherit; font-weight:700; cursor:pointer;">বাতিল করুন</button>
+      <button type="button" id="confirmDeleteYes"
+        style="flex:1; border:none; border-radius:10px; padding:12px; background:#b3261e; color:white; font-family:inherit; font-weight:700; cursor:pointer;">হ্যাঁ, নিশ্চিত করে মুছুন</button>
+    </div>
   </div>
 </div>
 
@@ -1680,6 +1722,65 @@ document.getElementById("investorBtn").addEventListener("click", () => {
   applyViewMode();
 });
 
+let invPeriodMode = "year";
+let invPeriodYear = "all";
+let invPeriodMonth = "all";
+
+function renderInvestorPeriodTabs(){
+  const wrap = document.getElementById("invPeriodTabs");
+  wrap.innerHTML = "";
+  if (invPeriodMode === "year") {
+    const allBtn = document.createElement("div");
+    allBtn.className = "tab" + (invPeriodYear==="all" ? " active" : "");
+    allBtn.textContent = "সব বছর";
+    allBtn.onclick = () => { invPeriodYear = "all"; renderInvestorPeriodTabs(); renderInvestorPeriodStats(); };
+    wrap.appendChild(allBtn);
+    YEARS.forEach(y=>{
+      const b = document.createElement("div");
+      b.className = "tab" + (invPeriodYear===y ? " active" : "");
+      b.textContent = y + " বছর";
+      b.onclick = () => { invPeriodYear = y; renderInvestorPeriodTabs(); renderInvestorPeriodStats(); };
+      wrap.appendChild(b);
+    });
+  } else {
+    const months = getAvailableMonths();
+    const allBtn = document.createElement("div");
+    allBtn.className = "tab" + (invPeriodMonth==="all" ? " active" : "");
+    allBtn.textContent = "সব মাস";
+    allBtn.onclick = () => { invPeriodMonth = "all"; renderInvestorPeriodTabs(); renderInvestorPeriodStats(); };
+    wrap.appendChild(allBtn);
+    months.forEach(m=>{
+      const b = document.createElement("div");
+      b.className = "tab" + (invPeriodMonth===m ? " active" : "");
+      b.textContent = monthLabel(m);
+      b.onclick = () => { invPeriodMonth = m; renderInvestorPeriodTabs(); renderInvestorPeriodStats(); };
+      wrap.appendChild(b);
+    });
+  }
+}
+
+function renderInvestorPeriodStats(){
+  const list = invPeriodMode === "year" ? entriesForYear(invPeriodYear) : entriesForMonth(invPeriodMonth);
+  const inc = list.filter(e=>e.type==="income").reduce((a,e)=>a+e.amount,0);
+  const exp = list.filter(e=>e.type==="expense").reduce((a,e)=>a+e.amount,0);
+  document.getElementById("invPeriodIncome").textContent = money(inc);
+  document.getElementById("invPeriodExpense").textContent = money(exp);
+  document.getElementById("invPeriodNet").textContent = money(inc-exp);
+}
+
+document.getElementById("invPeriodModeSeg").addEventListener("click", (ev)=>{
+  const btn = ev.target.closest("button");
+  if (!btn) return;
+  const mode = btn.dataset.mode;
+  if (mode === invPeriodMode) return;
+  invPeriodMode = mode;
+  document.querySelectorAll("#invPeriodModeSeg button").forEach(b=>{
+    b.classList.toggle("on", b.dataset.mode === invPeriodMode);
+  });
+  renderInvestorPeriodTabs();
+  renderInvestorPeriodStats();
+});
+
 function renderInvestorOwnView(){
   if (!investorSession) return;
 
@@ -1689,6 +1790,9 @@ function renderInvestorOwnView(){
   document.getElementById("invLiveIncome").textContent = money(liveInc);
   document.getElementById("invLiveExpense").textContent = money(liveExp);
   document.getElementById("invLiveNet").textContent = money(liveInc-liveExp);
+
+  renderInvestorPeriodTabs();
+  renderInvestorPeriodStats();
 
   const match = (DATA.investors.approved || []).find(r => r.email === investorSession.email && r.id === investorSession.id);
   const nameSpan = document.getElementById("investorNameSpan");
@@ -1921,12 +2025,48 @@ document.getElementById("staffBtn").addEventListener("click", () => {
   alert("আপনার অনুরোধ পাঠানো হয়েছে। অ্যাডমিন 'স্টাফ ব্যবস্থাপনা' থেকে অনুমোদন দিলে তিনি আপনাকে একটা Employee ID দেবেন — এরপর থেকে শুধু সেই আইডি ও এই পাসওয়ার্ড দিয়ে লগইন করতে পারবেন।");
 });
 
+let pendingDeleteId = null;
+
 function deleteEntry(id){
   if (!isAdmin) return;
-  DATA.entries = DATA.entries.filter(e => e.id !== id);
+  const entry = DATA.entries.find(e => e.id === id);
+  if (!entry) return;
+  pendingDeleteId = id;
+
+  const body = document.getElementById("confirmDeleteDetails");
+  body.innerHTML = `
+    <tr><td>তারিখ</td><td>${fmtDate(entry.date)}</td></tr>
+    <tr><td>বছর</td><td>${entry.year} বছর</td></tr>
+    <tr><td>ধরন</td><td>${entry.type === "income" ? "আয়" : "খরচ"}</td></tr>
+    <tr><td>খাত</td><td>${entry.category}</td></tr>
+    <tr><td>পরিমাণ</td><td class="amt ${entry.type==='income'?'in':'ex'}">${money(entry.amount)}</td></tr>
+    <tr><td>বিবরণ</td><td>${entry.note ? entry.note : "—"}</td></tr>
+  `;
+  openModal("confirmDeleteOverlay");
+}
+
+document.getElementById("confirmDeleteClose").addEventListener("click", () => {
+  pendingDeleteId = null;
+  closeModal("confirmDeleteOverlay");
+});
+document.getElementById("confirmDeleteCancel").addEventListener("click", () => {
+  pendingDeleteId = null;
+  closeModal("confirmDeleteOverlay");
+});
+document.getElementById("confirmDeleteOverlay").addEventListener("click", (ev)=>{
+  if (ev.target.id === "confirmDeleteOverlay") {
+    pendingDeleteId = null;
+    closeModal("confirmDeleteOverlay");
+  }
+});
+document.getElementById("confirmDeleteYes").addEventListener("click", () => {
+  if (!isAdmin || !pendingDeleteId) return;
+  DATA.entries = DATA.entries.filter(e => e.id !== pendingDeleteId);
+  pendingDeleteId = null;
   renderAll();
   saveState();
-}
+  closeModal("confirmDeleteOverlay");
+});
 
 function openEditEntry(id){
   if (!isAdmin) return;
