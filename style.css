@@ -4,19 +4,19 @@
    =========================================================== */
 
 :root {
-  /* ---- agro-tracker paddy-green palette ---- */
-  --soil: #1B4332;
-  --soil-soft: #2D6A4F;
-  --paddy: #40916C;
-  --paddy-deep: #2D6A4F;
-  --water: var(--paddy-deep); /* was a separate identical hex; merged to one source of truth */
-  --harvest: #F4A300;
-  --harvest-deep: #8D5B2B;
-  --harvest-soft: #FFF1CC;
-  --husk: #F3F8F1;
-  --husk-deep: #D8F3DC;
-  --ink: #1F2D25;
-  --ink-soft: #587065;
+  /* ---- refined natural palette: deep forest, ripened paddy, wheat/harvest gold ---- */
+  --soil: #1B3A2F;
+  --soil-soft: #2F6B4F;
+  --paddy: #5C8D5A;
+  --paddy-deep: #35603F;
+  --water: #5E8B85;
+  --harvest: #D98A3D;
+  --harvest-deep: #7A4A24;
+  --harvest-soft: #F6E7C9;
+  --husk: #F5F1E6;
+  --husk-deep: #E2E6D4;
+  --ink: #23302A;
+  --ink-soft: #5B6B5E;
   --white: #FFFFFF;
 
   --serif: 'Tiro Bangla', 'Noto Serif Bengali', Georgia, serif;
@@ -109,7 +109,7 @@ a:focus-visible, button:focus-visible {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(241, 234, 218, 0.92);
+  background: rgba(245, 241, 230, 0.92);
   backdrop-filter: saturate(140%) blur(6px);
   border-bottom: 1px solid rgba(46, 33, 21, 0.12);
 }
@@ -796,6 +796,83 @@ a:focus-visible, button:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .focus-item, .project-card { transition: none; }
   .focus-item:hover, .project-card:hover { transform: none; }
+}
+
+/* ---------- scroll progress bar ---------- */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  z-index: 999;
+  background: transparent;
+  pointer-events: none;
+}
+.scroll-progress span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--paddy), var(--harvest));
+  transition: width 0.1s linear;
+}
+
+/* ---------- back-to-top button ---------- */
+.back-to-top {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: none;
+  background: var(--soil);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(27, 67, 50, 0.28);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  transition: opacity 0.25s ease, transform 0.25s ease, background 0.25s ease, visibility 0.25s ease;
+  z-index: 60;
+}
+.back-to-top.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.back-to-top:hover { background: var(--paddy); }
+@media (prefers-reduced-motion: reduce) {
+  .back-to-top { transition: opacity 0.25s ease, visibility 0.25s ease; }
+}
+
+/* ---------- hero tagline (typing animation) ---------- */
+.hero-tagline {
+  font-family: var(--serif);
+  font-size: 16.5px;
+  font-weight: 600;
+  color: var(--paddy-deep);
+  margin: 2px 0 10px;
+  min-height: 1.4em;
+}
+.typing-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  background: var(--paddy-deep);
+  vertical-align: -0.15em;
+  animation: caretBlink 0.9s steps(1) infinite;
+}
+.typing-cursor.done { animation: caretBlink 0.9s steps(1) infinite; }
+@keyframes caretBlink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .typing-cursor { display: none; }
 }
 
 /* ---------- section divider (paddy row motif) ---------- */

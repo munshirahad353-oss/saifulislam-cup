@@ -54,6 +54,7 @@
 <body>
 
 <a class="skip-link" href="#main">মূল কনটেন্টে যান</a>
+<div class="scroll-progress" id="scrollProgress" aria-hidden="true"><span></span></div>
 <div class="field-lines" aria-hidden="true"></div>
 
 <header class="site-header" id="top">
@@ -100,6 +101,7 @@
       <div class="hero-copy">
         <img src="profile.jpg" alt="মো: সাইফুল ইসলাম" class="hero-avatar" width="88" height="88">
         <p class="eyebrow-plain">দক্ষিণ জ্ঞানপাড়া, পাথরঘাটা, বরগুনা</p>
+        <p class="hero-tagline"><span id="typingTagline" class="typing-text">স্মার্ট কৃষি, সমৃদ্ধ আগামী</span><span class="typing-cursor" aria-hidden="true"></span></p>
         <h1>
           আমি মো: সাইফুল ইসলাম — সমাজবিজ্ঞানের ছাত্র ও <strong>মুন্সী এগ্রো</strong>-র প্রতিষ্ঠাতা।
         </h1>
@@ -331,6 +333,8 @@
   <img id="lightboxImg" src="" alt="">
   <p id="lightboxCaption" class="lightbox-caption"></p>
 </div>
+
+<button type="button" id="backToTop" class="back-to-top" aria-label="উপরে যান">↑</button>
 
 <script src="script.js" defer></script>
 </body>
