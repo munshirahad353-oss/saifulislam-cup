@@ -298,6 +298,44 @@
     font-size: 13px; color: var(--muted); background: var(--soft); border-radius: 10px;
     padding: 10px 14px; margin-bottom: 16px;
   }
+  /* ---------- styled login / confirm dialogs ---------- */
+  .login-box { max-width: 400px; padding: 30px 24px 24px; }
+  .login-head { text-align: center; margin-bottom: 18px; }
+  .login-icon {
+    width: 58px; height: 58px; border-radius: 50%; margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 26px;
+    background: linear-gradient(135deg, var(--soft), var(--white)); border: 2px solid var(--soft);
+    box-shadow: 0 6px 16px rgba(27,67,50,0.12);
+  }
+  .login-head h2 { margin: 0 0 4px; font-size: 20px; color: var(--dark); }
+  .login-sub { margin: 0; font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+  .login-tabs { display: flex; gap: 6px; background: var(--bg); padding: 4px; border-radius: 12px; margin-bottom: 16px; }
+  .login-tab {
+    flex: 1; border: none; background: none; padding: 9px 6px; border-radius: 9px;
+    font-family: inherit; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer;
+  }
+  .login-tab.active { background: var(--white); color: var(--dark); box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+  .login-field { margin-bottom: 14px; }
+  .login-field input {
+    width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1.5px solid var(--soft); border-radius: 10px;
+    font-family: inherit; font-size: 15px; background: var(--bg); color: var(--text);
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  }
+  .login-field input:focus { outline: none; border-color: var(--mid); box-shadow: 0 0 0 3px rgba(64,145,108,0.18); background: var(--white); }
+  .login-pass { position: relative; }
+  .login-pass input { padding-right: 46px; }
+  .login-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 17px; cursor: pointer; padding: 6px 8px; }
+  .login-hint { font-size: 12px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+  .login-msg { border-radius: 10px; padding: 10px 12px; font-size: 13.5px; line-height: 1.55; margin-bottom: 14px; }
+  .login-msg.error { background: #FDE2DA; color: var(--red); }
+  .login-msg.success { background: var(--soft); color: var(--dark); }
+  .login-submit { width: 100%; }
+  .dialog-box { max-width: 360px; text-align: center; padding: 28px 22px 22px; }
+  .dialog-box p { margin: 0 0 18px; font-size: 15px; line-height: 1.6; color: var(--text); }
+  .dialog-actions { display: flex; gap: 10px; }
+  .dialog-actions button { flex: 1; border: none; border-radius: 10px; padding: 11px 8px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .dialog-yes { background: var(--dark); color: var(--white); }
+  .dialog-no { background: var(--soft); color: var(--dark); }
 </style>
 <!-- Google Analytics (GA4) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-3DZPQBGPBJ"></script>
@@ -649,6 +687,33 @@
     </div>
   </div>
 </div>
+</div>
+
+<div class="modal-overlay" id="loginOverlay" style="display:none;">
+  <div class="modal-box login-box">
+    <button type="button" class="modal-close" id="loginClose">✕</button>
+    <div class="login-head">
+      <div class="login-icon" id="loginIcon">🔒</div>
+      <h2 id="loginTitle">লগইন</h2>
+      <p class="login-sub" id="loginSub"></p>
+    </div>
+    <div class="login-tabs" id="loginTabs" style="display:none;"></div>
+    <form id="loginForm" autocomplete="off" novalidate>
+      <div id="loginFields"></div>
+      <div class="login-msg" id="loginMsg" role="alert" style="display:none;"></div>
+      <button type="submit" class="btn login-submit" id="loginSubmit">লগইন</button>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="dialogOverlay" style="display:none;">
+  <div class="modal-box dialog-box">
+    <p id="dialogText"></p>
+    <div class="dialog-actions">
+      <button type="button" class="dialog-no" id="dialogNo">না</button>
+      <button type="button" class="dialog-yes" id="dialogYes">হ্যাঁ</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="investFormOverlay" style="display:none;">
@@ -1703,6 +1768,139 @@ function money2(n){ return "৳" + Math.round(n||0).toLocaleString("bn-BD"); }
 function openModal(id){ document.getElementById(id).style.display = "flex"; }
 function closeModal(id){ document.getElementById(id).style.display = "none"; }
 
+/* ---------- Styled login dialog (replaces browser prompt()) ---------- */
+let loginCfg = null;
+let loginTab = 0;
+let loginDone = false;
+
+function showLogin(cfg){
+  loginCfg = cfg;
+  loginTab = 0;
+  document.getElementById("loginIcon").textContent = cfg.icon || "🔒";
+  document.getElementById("loginTitle").textContent = cfg.title || "লগইন";
+  document.getElementById("loginSub").textContent = cfg.sub || "";
+  const tabsEl = document.getElementById("loginTabs");
+  tabsEl.innerHTML = "";
+  if (cfg.tabs.length > 1) {
+    tabsEl.style.display = "flex";
+    cfg.tabs.forEach((t, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "login-tab";
+      b.textContent = t.label;
+      b.addEventListener("click", () => renderLoginTab(i));
+      tabsEl.appendChild(b);
+    });
+  } else {
+    tabsEl.style.display = "none";
+  }
+  renderLoginTab(0);
+  openModal("loginOverlay");
+}
+
+function renderLoginTab(i){
+  loginTab = i;
+  loginDone = false;
+  const tab = loginCfg.tabs[i];
+  document.querySelectorAll("#loginTabs .login-tab").forEach((b, idx) => b.classList.toggle("active", idx === i));
+  const fieldsEl = document.getElementById("loginFields");
+  fieldsEl.innerHTML = "";
+  tab.fields.forEach(f => {
+    const wrap = document.createElement("div");
+    wrap.className = "login-field";
+    const label = document.createElement("label");
+    label.textContent = f.label;
+    label.htmlFor = "lf_" + f.name;
+    wrap.appendChild(label);
+    const input = document.createElement("input");
+    input.id = "lf_" + f.name;
+    input.name = f.name;
+    input.type = f.type || "text";
+    input.placeholder = f.placeholder || "";
+    input.autocomplete = f.type === "password" ? "current-password" : "off";
+    if (f.type === "password") {
+      const pw = document.createElement("div");
+      pw.className = "login-pass";
+      pw.appendChild(input);
+      const eye = document.createElement("button");
+      eye.type = "button";
+      eye.className = "login-eye";
+      eye.setAttribute("aria-label", "পাসওয়ার্ড দেখান/লুকান");
+      eye.textContent = "👁";
+      eye.addEventListener("click", () => { input.type = input.type === "password" ? "text" : "password"; });
+      pw.appendChild(eye);
+      wrap.appendChild(pw);
+    } else {
+      wrap.appendChild(input);
+    }
+    if (f.hint) {
+      const h = document.createElement("div");
+      h.className = "login-hint";
+      h.textContent = f.hint;
+      wrap.appendChild(h);
+    }
+    fieldsEl.appendChild(wrap);
+  });
+  setLoginMsg("", "");
+  document.getElementById("loginSubmit").textContent = tab.submit || "লগইন";
+  document.getElementById("loginSubmit").style.display = "";
+  const first = fieldsEl.querySelector("input");
+  if (first) setTimeout(() => first.focus(), 50);
+}
+
+function setLoginMsg(text, kind){
+  const el = document.getElementById("loginMsg");
+  if (!text) { el.style.display = "none"; el.textContent = ""; return; }
+  el.className = "login-msg " + kind;
+  el.textContent = text;
+  el.style.display = "block";
+}
+
+document.getElementById("loginForm").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  if (loginDone) { closeModal("loginOverlay"); return; }
+  const tab = loginCfg.tabs[loginTab];
+  const values = {};
+  tab.fields.forEach(f => { values[f.name] = document.getElementById("lf_" + f.name).value; });
+  const res = tab.onSubmit(values) || {};
+  if (res.error) { setLoginMsg(res.error, "error"); return; }
+  if (res.success) {
+    setLoginMsg(res.success, "success");
+    document.getElementById("loginFields").innerHTML = "";
+    document.getElementById("loginSubmit").textContent = "ঠিক আছে";
+    loginDone = true;
+    return;
+  }
+  closeModal("loginOverlay");
+});
+document.getElementById("loginClose").addEventListener("click", () => closeModal("loginOverlay"));
+document.getElementById("loginOverlay").addEventListener("click", (ev) => {
+  if (ev.target.id === "loginOverlay") closeModal("loginOverlay");
+});
+
+/* ---------- Styled yes/no dialog (replaces confirm() for logout) ---------- */
+function showConfirmDialog(text, onYes){
+  document.getElementById("dialogText").textContent = text;
+  openModal("dialogOverlay");
+  const yes = document.getElementById("dialogYes");
+  const no = document.getElementById("dialogNo");
+  const done = () => {
+    closeModal("dialogOverlay");
+    yes.onclick = null;
+    no.onclick = null;
+  };
+  yes.onclick = () => { done(); onYes(); };
+  no.onclick = done;
+}
+document.getElementById("dialogOverlay").addEventListener("click", (ev) => {
+  if (ev.target.id === "dialogOverlay") closeModal("dialogOverlay");
+});
+document.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Escape") return;
+  closeModal("loginOverlay");
+  closeModal("dialogOverlay");
+});
+
 document.getElementById("btnInvestNow").addEventListener("click", () => openModal("investFormOverlay"));
 document.getElementById("investFormClose").addEventListener("click", () => closeModal("investFormOverlay"));
 document.getElementById("investFormOverlay").addEventListener("click", (ev)=>{
@@ -1860,32 +2058,42 @@ document.getElementById("downloadInvestorExcelBtn").addEventListener("click", ()
 
 document.getElementById("investorBtn").addEventListener("click", () => {
   if (investorSession) {
-    const ok = confirm("ইনভেস্টর লগইন থেকে বের হতে চান?");
-    if (!ok) return;
-    investorSession = null;
-    localStorage.removeItem("munshiInvestorEmail");
-    localStorage.removeItem("munshiInvestorId");
-    applyViewMode();
+    showConfirmDialog("ইনভেস্টর লগইন থেকে বের হতে চান?", () => {
+      investorSession = null;
+      localStorage.removeItem("munshiInvestorEmail");
+      localStorage.removeItem("munshiInvestorId");
+      applyViewMode();
+    });
     return;
   }
-  const email = (prompt("আপনার ইমেইল দিন:") || "").trim().toLowerCase();
-  if (!email) return;
-  const id = (prompt("আপনার ইনভেস্টর আইডি দিন:") || "").trim().toUpperCase();
-  if (!id) return;
-  const match = (DATA.investors.approved || []).find(r => r.email === email && r.id.toUpperCase() === id);
-  if (!match) {
-    const stillPending = (DATA.investors.pending || []).find(r => r.email === email && r.id.toUpperCase() === id);
-    if (stillPending) {
-      alert("আপনার অনুরোধ এখনো অ্যাডমিনের অনুমোদনের অপেক্ষায় আছে। অনুমোদন হলে এই একই ইমেইল-আইডি দিয়ে লগইন করতে পারবেন।");
-    } else {
-      alert("এই ইমেইল ও আইডি দিয়ে কোনো ইনভেস্টর পাওয়া যায়নি। ইনভেস্ট করতে 'Invest করুন' বাটন ব্যবহার করুন।");
-    }
-    return;
-  }
-  investorSession = { email: match.email, id: match.id };
-  localStorage.setItem("munshiInvestorEmail", match.email);
-  localStorage.setItem("munshiInvestorId", match.id);
-  applyViewMode();
+  showLogin({
+    icon: "💼",
+    title: "ইনভেস্টর লগইন",
+    sub: "আপনার ইমেইল ও ইনভেস্টর আইডি দিন",
+    tabs: [{
+      submit: "লগইন",
+      fields: [
+        { name: "email", label: "ইমেইল", type: "email", placeholder: "example@email.com" },
+        { name: "id", label: "ইনভেস্টর আইডি", type: "text", placeholder: "যেমন INV-001" }
+      ],
+      onSubmit: (v) => {
+        const email = (v.email || "").trim().toLowerCase();
+        const id = (v.id || "").trim().toUpperCase();
+        if (!email || !id) return { error: "ইমেইল ও ইনভেস্টর আইডি দুটোই দিন।" };
+        const match = (DATA.investors.approved || []).find(r => r.email === email && r.id.toUpperCase() === id);
+        if (!match) {
+          const stillPending = (DATA.investors.pending || []).find(r => r.email === email && r.id.toUpperCase() === id);
+          if (stillPending) return { error: "আপনার অনুরোধ এখনো অ্যাডমিনের অনুমোদনের অপেক্ষায় আছে। অনুমোদন হলে এই একই ইমেইল-আইডি দিয়ে লগইন করতে পারবেন।" };
+          return { error: "এই ইমেইল ও আইডি দিয়ে কোনো ইনভেস্টর পাওয়া যায়নি। ইনভেস্ট করতে 'Invest করুন' বাটন ব্যবহার করুন।" };
+        }
+        investorSession = { email: match.email, id: match.id };
+        localStorage.setItem("munshiInvestorEmail", match.email);
+        localStorage.setItem("munshiInvestorId", match.id);
+        applyViewMode();
+        return {};
+      }
+    }]
+  });
 });
 
 let invPeriodMode = "year";
@@ -2118,77 +2326,100 @@ document.getElementById("navGrid").addEventListener("click", (ev)=>{
 
 document.getElementById("adminBtn").addEventListener("click", () => {
   if (isAdmin) {
-    const ok = confirm("অ্যাডমিন মোড থেকে বের হয়ে পাবলিক (শুধু-দেখা) ভিউতে যেতে চান?");
-    if (!ok) return;
-    isAdmin = false;
-    localStorage.setItem("munshiIsAdmin", "false");
-  } else {
-    const pass = prompt("অ্যাডমিন পাসওয়ার্ড দিন:");
-    if (pass === null) return;
-    if (pass === ADMIN_PASSWORD) {
-      isAdmin = true;
-      isStaff = false;
-      localStorage.setItem("munshiIsAdmin", "true");
-      localStorage.setItem("munshiIsStaff", "false");
-    } else {
-      alert("পাসওয়ার্ড ভুল হয়েছে।");
-      return;
-    }
+    showConfirmDialog("অ্যাডমিন মোড থেকে বের হয়ে পাবলিক (শুধু-দেখা) ভিউতে যেতে চান?", () => {
+      isAdmin = false;
+      localStorage.setItem("munshiIsAdmin", "false");
+      applyAdminUI();
+      renderAll();
+    });
+    return;
   }
-  applyAdminUI();
-  renderAll();
+  showLogin({
+    icon: "🔒",
+    title: "অ্যাডমিন লগইন",
+    sub: "চালিয়ে যেতে অ্যাডমিন পাসওয়ার্ড দিন",
+    tabs: [{
+      submit: "লগইন",
+      fields: [{ name: "pass", label: "পাসওয়ার্ড", type: "password", placeholder: "••••••••" }],
+      onSubmit: (v) => {
+        if (v.pass !== ADMIN_PASSWORD) return { error: "পাসওয়ার্ড ভুল হয়েছে।" };
+        isAdmin = true;
+        isStaff = false;
+        localStorage.setItem("munshiIsAdmin", "true");
+        localStorage.setItem("munshiIsStaff", "false");
+        applyAdminUI();
+        renderAll();
+        return {};
+      }
+    }]
+  });
 });
 
 document.getElementById("staffBtn").addEventListener("click", () => {
   if (isStaff) {
-    const ok = confirm("স্টাফ মোড থেকে বের হয়ে পাবলিক (শুধু-দেখা) ভিউতে যেতে চান?");
-    if (!ok) return;
-    isStaff = false;
-    staffEmail = null;
-    localStorage.setItem("munshiIsStaff", "false");
-    localStorage.removeItem("munshiStaffEmail");
-    applyAdminUI();
-    renderAll();
+    showConfirmDialog("স্টাফ মোড থেকে বের হয়ে পাবলিক (শুধু-দেখা) ভিউতে যেতে চান?", () => {
+      isStaff = false;
+      staffEmail = null;
+      localStorage.setItem("munshiIsStaff", "false");
+      localStorage.removeItem("munshiStaffEmail");
+      applyAdminUI();
+      renderAll();
+    });
     return;
   }
-
-  const empId = (prompt("যদি অ্যাডমিন আপনাকে আগে থেকেই একটা Employee ID দিয়ে থাকেন, সেটা এখানে দিন (না থাকলে খালি রেখে OK চাপুন):") || "").trim().toUpperCase();
-
-  if (empId) {
-    const password = prompt("আপনার পাসওয়ার্ড দিন:");
-    if (password === null || password === "") { alert("পাসওয়ার্ড দিতে হবে।"); return; }
-    const approved = (DATA.staff.approved || []).find(r => (r.employeeId||"").toUpperCase() === empId);
-    if (!approved) { alert("এই Employee ID দিয়ে কোনো স্টাফ পাওয়া যায়নি।"); return; }
-    if (approved.password !== password) { alert("পাসওয়ার্ড ভুল হয়েছে।"); return; }
-    isStaff = true;
-    staffEmail = approved.email;
-    localStorage.setItem("munshiIsStaff", "true");
-    localStorage.setItem("munshiStaffEmail", approved.email);
-    applyAdminUI();
-    renderAll();
-    return;
-  }
-
-  const email = (prompt("এটাই আপনার প্রথমবার হলে — আপনার ইমেইল দিন:") || "").trim().toLowerCase();
-  if (!email) return;
-  const password = prompt("একটা পাসওয়ার্ড ঠিক করুন:");
-  if (password === null || password === "") { alert("পাসওয়ার্ড দিতে হবে।"); return; }
-
-  const approvedByEmail = (DATA.staff.approved || []).find(r => r.email === email);
-  if (approvedByEmail) {
-    alert("এই ইমেইল দিয়ে আপনি ইতিমধ্যে অনুমোদিত — অ্যাডমিনের কাছ থেকে আপনার Employee ID টা নিয়ে পরের বার সেটা দিয়ে লগইন করুন।");
-    return;
-  }
-
-  const name = prompt("আপনার নাম লিখুন (ঐচ্ছিক):") || "";
-  const alreadyPending = (DATA.staff.pending || []).find(r => r.email === email);
-  if (alreadyPending) {
-    alert("এই ইমেইল দিয়ে আপনার একটা অনুরোধ ইতিমধ্যে অ্যাডমিনের অনুমোদনের অপেক্ষায় আছে। অনুমোদনের পর অ্যাডমিন আপনাকে একটা Employee ID দেবেন, সেটা দিয়ে পরে লগইন করবেন।");
-    return;
-  }
-  DATA.staff.pending.push({ id: makeId(), email, password, name: name.trim() });
-  saveState();
-  alert("আপনার অনুরোধ পাঠানো হয়েছে। অ্যাডমিন 'স্টাফ ব্যবস্থাপনা' থেকে অনুমোদন দিলে তিনি আপনাকে একটা Employee ID দেবেন — এরপর থেকে শুধু সেই আইডি ও এই পাসওয়ার্ড দিয়ে লগইন করতে পারবেন।");
+  showLogin({
+    icon: "👤",
+    title: "স্টাফ লগইন",
+    sub: "Employee ID থাকলে লগইন করুন, না থাকলে এক্সেসের জন্য অনুরোধ পাঠান",
+    tabs: [
+      {
+        label: "লগইন",
+        submit: "লগইন",
+        fields: [
+          { name: "empId", label: "Employee ID", type: "text", placeholder: "অ্যাডমিনের দেওয়া আইডি" },
+          { name: "password", label: "পাসওয়ার্ড", type: "password", placeholder: "••••••••" }
+        ],
+        onSubmit: (v) => {
+          const empId = (v.empId || "").trim().toUpperCase();
+          if (!empId) return { error: "Employee ID দিন।" };
+          if (!v.password) return { error: "পাসওয়ার্ড দিতে হবে।" };
+          const approved = (DATA.staff.approved || []).find(r => (r.employeeId || "").toUpperCase() === empId);
+          if (!approved) return { error: "এই Employee ID দিয়ে কোনো স্টাফ পাওয়া যায়নি।" };
+          if (approved.password !== v.password) return { error: "পাসওয়ার্ড ভুল হয়েছে।" };
+          isStaff = true;
+          staffEmail = approved.email;
+          localStorage.setItem("munshiIsStaff", "true");
+          localStorage.setItem("munshiStaffEmail", approved.email);
+          applyAdminUI();
+          renderAll();
+          return {};
+        }
+      },
+      {
+        label: "প্রথমবার? অনুরোধ",
+        submit: "অনুরোধ পাঠান",
+        fields: [
+          { name: "name", label: "নাম (ঐচ্ছিক)", type: "text", placeholder: "আপনার নাম" },
+          { name: "email", label: "ইমেইল", type: "email", placeholder: "example@email.com" },
+          { name: "password", label: "পাসওয়ার্ড ঠিক করুন", type: "password", placeholder: "••••••••", hint: "অনুমোদনের পর এই পাসওয়ার্ড ও Employee ID দিয়ে লগইন করবেন।" }
+        ],
+        onSubmit: (v) => {
+          const email = (v.email || "").trim().toLowerCase();
+          if (!email) return { error: "ইমেইল দিন।" };
+          if (!v.password) return { error: "পাসওয়ার্ড দিতে হবে।" };
+          if ((DATA.staff.approved || []).find(r => r.email === email)) {
+            return { error: "এই ইমেইল দিয়ে আপনি ইতিমধ্যে অনুমোদিত — অ্যাডমিনের কাছ থেকে আপনার Employee ID নিয়ে 'লগইন' ট্যাব থেকে লগইন করুন।" };
+          }
+          if ((DATA.staff.pending || []).find(r => r.email === email)) {
+            return { error: "এই ইমেইল দিয়ে আপনার একটা অনুরোধ ইতিমধ্যে অ্যাডমিনের অনুমোদনের অপেক্ষায় আছে।" };
+          }
+          DATA.staff.pending.push({ id: makeId(), email, password: v.password, name: (v.name || "").trim() });
+          saveState();
+          return { success: "আপনার অনুরোধ পাঠানো হয়েছে। অ্যাডমিন অনুমোদন দিলে আপনাকে একটা Employee ID দেবেন — এরপর থেকে সেই আইডি ও এই পাসওয়ার্ড দিয়ে লগইন করতে পারবেন।" };
+        }
+      }
+    ]
+  });
 });
 
 let pendingDeleteId = null;
