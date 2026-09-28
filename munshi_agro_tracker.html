@@ -337,6 +337,27 @@
   .dialog-yes { background: var(--dark); color: var(--white); }
   .dialog-no { background: var(--soft); color: var(--dark); }
   #loginOverlay, #dialogOverlay, #noticeOverlay { z-index: 300; }
+  /* staff management: daily report + leave requests (per staff name + Employee ID) */
+  .day-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .day-toolbar input[type=date] {
+    padding: 9px 12px; border-radius: 10px; border: 1.5px solid var(--soft);
+    font-family: inherit; font-size: 14px; background: var(--bg); color: var(--text);
+  }
+  .day-today-btn {
+    border: none; background: var(--soft); color: var(--dark); border-radius: 10px;
+    padding: 9px 14px; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .day-summary { font-size: 13px; color: var(--muted); margin: 4px 0 10px; }
+  .day-box { border: 1.5px solid var(--soft); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; background: var(--bg); }
+  .day-box.missing { opacity: 0.8; }
+  .day-who { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 700; font-size: 14px; color: var(--dark); }
+  .day-eid { font-size: 12px; background: var(--soft); color: var(--dark); padding: 2px 9px; border-radius: 20px; font-weight: 700; }
+  .day-text { margin-top: 6px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+  .day-tag { display: inline-block; margin-top: 6px; font-size: 12.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+  .tag-leave { background: var(--amber-soft); color: var(--brown); }
+  .tag-none { background: #FDE2DA; color: var(--red); }
+  .tag-ok { background: var(--soft); color: var(--dark); }
+  .pending-leave-count { display: inline-block; min-width: 20px; padding: 0 7px; margin-left: 6px; border-radius: 20px; background: var(--amber); color: var(--white); font-size: 12px; font-weight: 700; text-align: center; }
   .notice-box h2 { margin: 0 0 8px; font-size: 19px; color: var(--dark); }
   .notice-box.error h2 { color: var(--red); }
   .notice-code {
@@ -602,6 +623,17 @@
 
   <div class="card section-panel admin-hidden" id="staffCard" data-panel-id="panelStaff">
     <h2>স্টাফ ব্যবস্থাপনা</h2>
+
+    <h3 style="font-size:15px;margin:6px 0 8px;">📨 ছুটির অনুরোধ <span class="pending-leave-count" id="pendingLeaveCount" style="display:none;">0</span></h3>
+    <div id="pendingLeaveList" style="margin-bottom:22px;"></div>
+
+    <h3 style="font-size:15px;margin:6px 0 8px;">📝 প্রতিদিনের রিপোর্ট</h3>
+    <div class="day-toolbar">
+      <input type="date" id="staffDailyDate" aria-label="তারিখ বাছাই করুন">
+      <button type="button" class="day-today-btn" id="staffDailyToday">আজ</button>
+    </div>
+    <div class="day-summary" id="staffDailySummary"></div>
+    <div id="staffDailyList" style="margin-bottom:24px;"></div>
     <p class="view-note">এখন ডেটা ক্লাউডে (সব ডিভাইসে শেয়ার্ড) সিঙ্ক হয়, তাই স্টাফ তার নিজের ফোন থেকে "স্টাফ লগইন" দিয়ে অনুরোধ পাঠালে সেটা এখানে নিচে "অপেক্ষমাণ অনুরোধ"-এ দেখাবে। "অনুমোদন" চাপলেই সে এক্সেস পেয়ে যাবে — শুধু <b>এন্ট্রি যোগ</b> করতে পারবে, মুছতে বা অন্য কিছু বদলাতে পারবে না।</p>
     <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
       <button type="button" id="resetStaffBtn"
@@ -1617,7 +1649,101 @@ function renderStaffLists(){
     apprWrap.querySelectorAll(".setcontact").forEach(b=> b.onclick = () => setStaffContact(b.dataset.id));
     apprWrap.querySelectorAll(".viewrep").forEach(b=> b.onclick = () => viewStaffReportsAndLeaves(b.dataset.id));
   }
+  renderPendingLeaves();
+  renderStaffDaily();
 }
+
+/* ---------- Staff management: leave requests + one-day report for everyone ---------- */
+function staffEsc(t){
+  return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// শুধু ছুটির অনুরোধ — সব স্টাফের অপেক্ষমাণ আবেদন, নাম ও Employee ID সহ
+function renderPendingLeaves(){
+  const wrap = document.getElementById("pendingLeaveList");
+  const badge = document.getElementById("pendingLeaveCount");
+  if (!wrap) return;
+  const rows = [];
+  (DATA.staff.approved || []).forEach(r => {
+    ensureStaffExtras(r);
+    (r.leaves || []).forEach(lv => { if (lv.status === "pending") rows.push({ staff: r, lv }); });
+  });
+  rows.sort((a, b) => (a.lv.date || "").localeCompare(b.lv.date || ""));
+  badge.textContent = rows.length;
+  badge.style.display = rows.length ? "inline-block" : "none";
+  wrap.innerHTML = "";
+  if (!rows.length) {
+    wrap.innerHTML = `<div class="empty">কোনো অপেক্ষমাণ ছুটির অনুরোধ নেই।</div>`;
+    return;
+  }
+  rows.forEach(({ staff, lv }) => {
+    const box = document.createElement("div");
+    box.className = "leave-box";
+    box.innerHTML = `
+      <div class="day-who"><span>${staffEsc(staff.name || staff.email)}</span><span class="day-eid">${staffEsc(staff.employeeId || "—")}</span></div>
+      <div class="leave-date" style="margin-top:6px;">📅 ছুটির তারিখ: ${staffEsc(lv.date)}</div>
+      <div class="leave-reason">কারণ: ${staffEsc(lv.reason)}</div>
+      <div class="leave-actions">
+        <button class="leave-approve" data-sid="${staff.id}" data-lid="${lv.id}">✅ অনুমোদন</button>
+        <button class="leave-reject" data-sid="${staff.id}" data-lid="${lv.id}">❌ বাতিল</button>
+      </div>`;
+    wrap.appendChild(box);
+  });
+  wrap.querySelectorAll(".leave-approve").forEach(b => b.onclick = () => decideLeave(b.dataset.sid, b.dataset.lid, "approved"));
+  wrap.querySelectorAll(".leave-reject").forEach(b => b.onclick = () => decideLeave(b.dataset.sid, b.dataset.lid, "rejected"));
+}
+
+// নির্বাচিত একদিনের সবার রিপোর্ট (ও ছুটি) — নাম ও Employee ID অনুযায়ী
+function renderStaffDaily(){
+  const dateEl = document.getElementById("staffDailyDate");
+  const listEl = document.getElementById("staffDailyList");
+  const sumEl = document.getElementById("staffDailySummary");
+  if (!dateEl || !listEl) return;
+  if (!dateEl.value) dateEl.value = todayISO();
+  const day = dateEl.value;
+  const staff = DATA.staff.approved || [];
+  listEl.innerHTML = "";
+  if (!staff.length) {
+    sumEl.textContent = "";
+    listEl.innerHTML = `<div class="empty">এখনো কোনো স্টাফ অনুমোদিত হয়নি।</div>`;
+    return;
+  }
+  const items = staff.map(r => {
+    ensureStaffExtras(r);
+    const reports = (r.reports || []).filter(rep => rep.date === day);
+    const leave = (r.leaves || []).find(lv => lv.date === day);
+    const state = reports.length ? 0 : (leave ? 1 : 2);
+    return { r, reports, leave, state };
+  }).sort((a, b) => a.state - b.state);
+
+  const done = items.filter(i => i.state === 0).length;
+  const onLeave = items.filter(i => i.leave && i.leave.status === "approved").length;
+  const missing = items.filter(i => i.state === 2).length;
+  sumEl.textContent = `📅 ${day} — ${done} জন রিপোর্ট দিয়েছেন · ${onLeave} জন ছুটিতে · ${missing} জন রিপোর্ট দেননি`;
+
+  items.forEach(({ r, reports, leave, state }) => {
+    const box = document.createElement("div");
+    box.className = "day-box" + (state === 2 ? " missing" : "");
+    let body = "";
+    if (reports.length) {
+      body += reports.map(rep => `<div class="day-text">${staffEsc(rep.text)}</div>`).join("");
+    }
+    if (leave) {
+      const label = leave.status === "approved" ? "ছুটি অনুমোদিত" : leave.status === "rejected" ? "ছুটির আবেদন বাতিল" : "ছুটির আবেদন অপেক্ষমাণ";
+      body += `<div><span class="day-tag tag-leave">🏖️ ${label}</span></div>` +
+              `<div class="day-text">কারণ: ${staffEsc(leave.reason)}</div>`;
+    }
+    if (state === 2) body += `<div><span class="day-tag tag-none">রিপোর্ট জমা দেননি</span></div>`;
+    box.innerHTML = `<div class="day-who"><span>${staffEsc(r.name || r.email)}</span><span class="day-eid">${staffEsc(r.employeeId || "—")}</span></div>${body}`;
+    listEl.appendChild(box);
+  });
+}
+
+document.getElementById("staffDailyDate").addEventListener("change", renderStaffDaily);
+document.getElementById("staffDailyToday").addEventListener("click", () => {
+  document.getElementById("staffDailyDate").value = todayISO();
+  renderStaffDaily();
+});
 
 function setStaffContact(id){
   const r = (DATA.staff.approved || []).find(r=>r.id===id);
