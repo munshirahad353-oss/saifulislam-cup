@@ -59,6 +59,18 @@
 <body>
 
 <a class="skip-link" href="#main">মূল কনটেন্টে যান</a>
+<div class="install-banner" id="installPill" hidden>
+  <div class="install-banner-inner">
+    <span class="install-banner-icon">📲</span>
+    <span class="install-banner-text">
+      <strong>অ্যাপ হিসেবে ইনস্টল করুন</strong>
+      <span>হোমস্ক্রিন থেকে সরাসরি খুলুন — ইন্টারনেট কম থাকলেও চলবে।</span>
+      <span class="install-hint" id="installHint" hidden>Safari-তে নিচের শেয়ার (⬆️) বাটন চেপে "Add to Home Screen" বাছুন।</span>
+    </span>
+    <button type="button" class="install-btn" id="installBtn">ইনস্টল করুন</button>
+    <button type="button" class="install-close" id="installClose" aria-label="বন্ধ করুন">✕</button>
+  </div>
+</div>
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"><span></span></div>
 <div class="field-lines" aria-hidden="true"></div>
 
@@ -390,12 +402,6 @@
   <button type="button" class="lightbox-close" id="lightboxClose" aria-label="বন্ধ করুন">✕</button>
   <img id="lightboxImg" src="" alt="">
   <p id="lightboxCaption" class="lightbox-caption"></p>
-</div>
-
-<div class="install-pill" id="installPill" hidden>
-  <div class="install-hint" id="installHint" hidden>Safari-তে নিচের শেয়ার (⬆️) বাটন চেপে "Add to Home Screen" বাছুন।</div>
-  <button type="button" class="install-btn" id="installBtn">📲 অ্যাপ ইনস্টল করুন</button>
-  <button type="button" class="install-close" id="installClose" aria-label="বন্ধ করুন">✕</button>
 </div>
 
 <button type="button" id="backToTop" class="back-to-top" aria-label="উপরে যান">↑</button>
