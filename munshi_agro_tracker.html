@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1B4332">
+<link rel="manifest" href="manifest-tracker.webmanifest">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="এগ্রো ট্র্যাকার">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>মুন্সী এগ্রো — হিসাব-নিকাশ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -386,6 +394,34 @@
   .toast.success { background: var(--dark); color: var(--white); }
   .toast.error { background: var(--red); color: var(--white); }
   @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ---------- PWA install pill ---------- */
+.install-pill {
+  position: fixed;
+  left: 16px;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  background: var(--soil, var(--dark));
+  color: #fff;
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgba(27, 67, 50, 0.28);
+}
+.install-pill[hidden] { display: none; }
+.install-btn, .install-close {
+  border: none; background: none; color: inherit; font-family: inherit; cursor: pointer;
+}
+.install-btn { padding: 11px 6px 11px 16px; font-size: 14px; font-weight: 700; }
+.install-close { padding: 11px 14px 11px 8px; font-size: 13px; opacity: 0.8; }
+.install-close:hover { opacity: 1; }
+.install-hint {
+  position: absolute; left: 0; bottom: calc(100% + 10px); width: 250px;
+  background: var(--white, #fff); color: var(--ink, var(--text));
+  border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.55;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+}
+.install-hint[hidden] { display: none; }
 </style>
 <!-- Google Analytics (GA4) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-3DZPQBGPBJ"></script>
@@ -2959,6 +2995,55 @@ if (cloudDocRef) {
 } else {
   startApp();
 }
+</script>
+<div class="install-pill" id="installPill" hidden>
+  <div class="install-hint" id="installHint" hidden>Safari-তে নিচের শেয়ার (⬆️) বাটন চেপে "Add to Home Screen" বাছুন।</div>
+  <button type="button" class="install-btn" id="installBtn">📲 অ্যাপ ইনস্টল করুন</button>
+  <button type="button" class="install-close" id="installClose" aria-label="বন্ধ করুন">✕</button>
+</div>
+<script>
+(function () {
+  // ---------- PWA: service worker + install button ----------
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
+
+  (function setupInstallPill() {
+    var pill = document.getElementById("installPill");
+    if (!pill || window.self !== window.top) return; // not inside the hero iframe
+    var btn = document.getElementById("installBtn");
+    var closeBtn = document.getElementById("installClose");
+    var hint = document.getElementById("installHint");
+    var standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
+    if (standalone) return;
+    try { if (sessionStorage.getItem("installDismissed") === "1") return; } catch (e) {}
+
+    var deferred = null;
+    var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+    window.addEventListener("beforeinstallprompt", function (e) {
+      e.preventDefault();
+      deferred = e;
+      pill.hidden = false;
+    });
+    window.addEventListener("appinstalled", function () { pill.hidden = true; });
+    if (isIOS) pill.hidden = false;
+
+    btn.addEventListener("click", function () {
+      if (deferred) {
+        deferred.prompt();
+        deferred.userChoice.then(function () { deferred = null; pill.hidden = true; });
+      } else if (isIOS) {
+        hint.hidden = !hint.hidden;
+      }
+    });
+    closeBtn.addEventListener("click", function () {
+      pill.hidden = true;
+      try { sessionStorage.setItem("installDismissed", "1"); } catch (e) {}
+    });
+  })();
+})();
 </script>
 </body>
 </html>

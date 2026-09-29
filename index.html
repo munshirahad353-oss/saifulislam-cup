@@ -9,6 +9,11 @@
 <meta name="theme-color" content="#1B4332">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="মুন্সী এগ্রো">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 
 <!-- Open Graph / Twitter -->
 <meta property="og:type" content="website">
@@ -332,6 +337,12 @@
   <button type="button" class="lightbox-close" id="lightboxClose" aria-label="বন্ধ করুন">✕</button>
   <img id="lightboxImg" src="" alt="">
   <p id="lightboxCaption" class="lightbox-caption"></p>
+</div>
+
+<div class="install-pill" id="installPill" hidden>
+  <div class="install-hint" id="installHint" hidden>Safari-তে নিচের শেয়ার (⬆️) বাটন চেপে "Add to Home Screen" বাছুন।</div>
+  <button type="button" class="install-btn" id="installBtn">📲 অ্যাপ ইনস্টল করুন</button>
+  <button type="button" class="install-close" id="installClose" aria-label="বন্ধ করুন">✕</button>
 </div>
 
 <button type="button" id="backToTop" class="back-to-top" aria-label="উপরে যান">↑</button>

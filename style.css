@@ -875,6 +875,34 @@ a:focus-visible, button:focus-visible {
   .typing-cursor { display: none; }
 }
 
+/* ---------- PWA install pill ---------- */
+.install-pill {
+  position: fixed;
+  left: 16px;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  background: var(--soil, var(--dark));
+  color: #fff;
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgba(27, 67, 50, 0.28);
+}
+.install-pill[hidden] { display: none; }
+.install-btn, .install-close {
+  border: none; background: none; color: inherit; font-family: inherit; cursor: pointer;
+}
+.install-btn { padding: 11px 6px 11px 16px; font-size: 14px; font-weight: 700; }
+.install-close { padding: 11px 14px 11px 8px; font-size: 13px; opacity: 0.8; }
+.install-close:hover { opacity: 1; }
+.install-hint {
+  position: absolute; left: 0; bottom: calc(100% + 10px); width: 250px;
+  background: var(--white, #fff); color: var(--ink, var(--text));
+  border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.55;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+}
+.install-hint[hidden] { display: none; }
+
 /* ---------- section divider (paddy row motif) ---------- */
 .divider {
   width: 100%;

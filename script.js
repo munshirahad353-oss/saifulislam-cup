@@ -231,6 +231,47 @@
     })();
   }
 
+  // ---------- PWA: service worker + install button ----------
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
+
+  (function setupInstallPill() {
+    var pill = document.getElementById("installPill");
+    if (!pill || window.self !== window.top) return; // not inside the hero iframe
+    var btn = document.getElementById("installBtn");
+    var closeBtn = document.getElementById("installClose");
+    var hint = document.getElementById("installHint");
+    var standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
+    if (standalone) return;
+    try { if (sessionStorage.getItem("installDismissed") === "1") return; } catch (e) {}
+
+    var deferred = null;
+    var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+    window.addEventListener("beforeinstallprompt", function (e) {
+      e.preventDefault();
+      deferred = e;
+      pill.hidden = false;
+    });
+    window.addEventListener("appinstalled", function () { pill.hidden = true; });
+    if (isIOS) pill.hidden = false;
+
+    btn.addEventListener("click", function () {
+      if (deferred) {
+        deferred.prompt();
+        deferred.userChoice.then(function () { deferred = null; pill.hidden = true; });
+      } else if (isIOS) {
+        hint.hidden = !hint.hidden;
+      }
+    });
+    closeBtn.addEventListener("click", function () {
+      pill.hidden = true;
+      try { sessionStorage.setItem("installDismissed", "1"); } catch (e) {}
+    });
+  })();
+
   // Footer year.
   var yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = new Date().getFullYear();
