@@ -231,6 +231,143 @@
     })();
   }
 
+  // ---------- "এক নজরে" dashboard: pulled live from the embedded tracker (same-origin) ----------
+  (function setupGlance() {
+    var frame = document.getElementById("heroTrackerFrame");
+    var sub = document.getElementById("glanceSub");
+    if (!frame) return;
+
+    function fmtTaka(n) {
+      n = Math.round(n || 0);
+      return "৳" + n.toLocaleString("bn-BD");
+    }
+    function bnDigits(n) {
+      return String(n).replace(/[0-9]/g, function (d) { return "০১২৩৪৫৬৭৮৯"[d]; });
+    }
+    function animateValue(el, to, isMoney) {
+      var from = 0;
+      var dur = 900;
+      var start = null;
+      function step(ts) {
+        if (!start) start = ts;
+        var p = Math.min(1, (ts - start) / dur);
+        var cur = from + (to - from) * (1 - Math.pow(1 - p, 3));
+        el.textContent = isMoney ? fmtTaka(cur) : bnDigits(Math.round(cur));
+        if (p < 1) requestAnimationFrame(step);
+      }
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        el.textContent = isMoney ? fmtTaka(to) : bnDigits(Math.round(to));
+      } else {
+        requestAnimationFrame(step);
+      }
+    }
+
+    function renderChart(yearly) {
+      var chartEl = document.getElementById("glanceChart");
+      if (!yearly || !yearly.length) {
+        chartEl.innerHTML = '<div class="glance-loading">এখনো কোনো এন্ট্রি নেই।</div>';
+        return;
+      }
+      var max = 1;
+      yearly.forEach(function (y) { max = Math.max(max, y.income, y.expense); });
+      chartEl.innerHTML = "";
+      yearly.forEach(function (y) {
+        var col = document.createElement("div");
+        col.className = "glance-year-col";
+        var bars = document.createElement("div");
+        bars.className = "glance-bars";
+        var inc = document.createElement("div");
+        inc.className = "glance-bar income";
+        inc.style.height = "0px";
+        var exp = document.createElement("div");
+        exp.className = "glance-bar expense";
+        exp.style.height = "0px";
+        bars.appendChild(inc);
+        bars.appendChild(exp);
+        var label = document.createElement("div");
+        label.className = "glance-year-label";
+        label.textContent = y.year + " বছর";
+        col.appendChild(bars);
+        col.appendChild(label);
+        chartEl.appendChild(col);
+        requestAnimationFrame(function () {
+          inc.style.height = Math.max(4, (y.income / max) * 150) + "px";
+          exp.style.height = Math.max(4, (y.expense / max) * 150) + "px";
+        });
+      });
+    }
+
+    function renderActivity(entries) {
+      var listEl = document.getElementById("glanceActivity");
+      if (!entries || !entries.length) {
+        listEl.innerHTML = '<li class="glance-loading">এখনো কোনো এন্ট্রি নেই।</li>';
+        return;
+      }
+      listEl.innerHTML = "";
+      entries.forEach(function (e) {
+        var li = document.createElement("li");
+        var catSpan = document.createElement("span");
+        catSpan.className = "ga-cat";
+        catSpan.textContent = e.category + (e.date ? " · " + e.date : e.year ? " · " + e.year + " বছর" : "");
+        var amtSpan = document.createElement("span");
+        amtSpan.className = "ga-amt " + e.type;
+        amtSpan.textContent = (e.type === "income" ? "+" : "−") + fmtTaka(e.amount);
+        li.appendChild(catSpan);
+        li.appendChild(amtSpan);
+        listEl.appendChild(li);
+      });
+    }
+
+    function applySummary(sum) {
+      if (!sum) return;
+      animateValue(document.getElementById("kpiIncome"), sum.totalIncome, true);
+      animateValue(document.getElementById("kpiExpense"), sum.totalExpense, true);
+      var profitEl = document.getElementById("kpiProfit");
+      profitEl.classList.toggle("is-negative", sum.netProfit < 0);
+      animateValue(profitEl, sum.netProfit, true);
+      animateValue(document.getElementById("kpiInvestors"), sum.investorsCount, false);
+      var growthEl = document.getElementById("kpiGrowth");
+      if (sum.growthPct == null) {
+        growthEl.textContent = "—";
+      } else {
+        var sign = sum.growthPct >= 0 ? "+" : "−";
+        growthEl.textContent = sign + bnDigits(Math.abs(sum.growthPct).toFixed(1)) + "%";
+        growthEl.classList.toggle("is-negative", sum.growthPct < 0);
+      }
+      renderChart(sum.yearly);
+      renderActivity(sum.recentEntries);
+      if (sub) sub.textContent = "লাইভ ট্র্যাকার থেকে সরাসরি হালনাগাদ তথ্য";
+    }
+
+    function tryPull() {
+      try {
+        if (frame.contentWindow && typeof frame.contentWindow.getMunshiSummary === "function") {
+          applySummary(frame.contentWindow.getMunshiSummary());
+          return true;
+        }
+      } catch (err) { /* cross-origin (e.g. file://) — nothing we can do */ }
+      return false;
+    }
+
+    frame.addEventListener("load", function () {
+      if (!tryPull()) {
+        // tracker's own data (Firebase) may still be loading — retry briefly.
+        var tries = 0;
+        var iv = setInterval(function () {
+          tries++;
+          if (tryPull() || tries > 20) clearInterval(iv);
+        }, 400);
+      }
+      try {
+        frame.contentWindow.addEventListener("munshi:update", function (ev) { applySummary(ev.detail); });
+      } catch (err) { /* cross-origin — live updates just won't reach this page */ }
+    });
+
+    if (frame.contentWindow && frame.contentDocument && frame.contentDocument.readyState === "complete") {
+      tryPull();
+    }
+  })();
+
   // ---------- PWA: service worker + install button ----------
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     window.addEventListener("load", function () {

@@ -1487,6 +1487,67 @@ function renderAll(){
   renderChart();
   renderTable();
   renderCatSummary();
+  broadcastSummary();
+}
+
+/* ---------- Public summary for the "এক নজরে" (At a Glance) section on index.html ----------
+   Same-origin only: index.html reads this from the hero iframe. No personal
+   data (names, NID, salary, phone, notes) is included — totals and category
+   labels only. */
+function getMunshiSummary(){
+  const entries = DATA.entries || [];
+  let totalIncome = 0, totalExpense = 0;
+  const byYear = [];              // [{year, income, expense}] in first-seen order
+  const yearIndex = {};
+  const catTotals = {};           // income-only, by category
+
+  entries.forEach(e => {
+    const amt = Number(e.amount) || 0;
+    if (e.type === "income") {
+      totalIncome += amt;
+      catTotals[e.category] = (catTotals[e.category] || 0) + amt;
+    } else {
+      totalExpense += amt;
+    }
+    const y = e.year || "—";
+    if (!(y in yearIndex)) { yearIndex[y] = byYear.length; byYear.push({ year: y, income: 0, expense: 0 }); }
+    byYear[yearIndex[y]][e.type === "income" ? "income" : "expense"] += amt;
+  });
+
+  let growthPct = null;
+  if (byYear.length >= 2) {
+    const prev = byYear[byYear.length - 2];
+    const last = byYear[byYear.length - 1];
+    const prevNet = prev.income - prev.expense;
+    const lastNet = last.income - last.expense;
+    if (prevNet !== 0) growthPct = ((lastNet - prevNet) / Math.abs(prevNet)) * 100;
+  }
+
+  const topCategories = Object.entries(catTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([category, amount]) => ({ category, amount }));
+
+  const recentEntries = entries.slice(-5).reverse().map(e => ({
+    type: e.type, category: e.category, amount: Number(e.amount) || 0,
+    date: e.date || null, year: e.year || null
+  }));
+
+  return {
+    totalIncome, totalExpense,
+    netProfit: totalIncome - totalExpense,
+    investorsCount: ((DATA.investors && DATA.investors.approved) || []).length,
+    growthPct,
+    yearly: byYear.slice(-6),   // keep the chart readable — last 6 years
+    topCategories,
+    recentEntries
+  };
+}
+window.getMunshiSummary = getMunshiSummary;
+
+function broadcastSummary(){
+  try { window.dispatchEvent(new CustomEvent("munshi:update", { detail: getMunshiSummary() })); }
+  catch (e) { /* CustomEvent unsupported in very old browsers — safe to ignore */ }
 }
 
 document.getElementById("typeSeg").addEventListener("click", (ev)=>{

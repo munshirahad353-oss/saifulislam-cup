@@ -903,6 +903,108 @@ a:focus-visible, button:focus-visible {
 }
 .install-hint[hidden] { display: none; }
 
+/* ---------- "এক নজরে" (At a Glance) dashboard ---------- */
+.glance-section { padding: 44px 0 8px; }
+.glance-title {
+  font-family: var(--serif);
+  font-size: 26px;
+  color: var(--soil);
+  margin: 0 0 4px;
+  text-align: center;
+}
+.glance-sub {
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 14px;
+  margin: 0 0 26px;
+}
+.glance-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.glance-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  background: var(--white);
+  border: 1px solid var(--husk-deep);
+  border-radius: 16px;
+  padding: 20px 10px;
+  box-shadow: 0 8px 20px rgba(27, 67, 50, 0.06);
+}
+.glance-icon { font-size: 24px; margin-bottom: 2px; }
+.glance-value {
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--soil);
+  line-height: 1.2;
+}
+.glance-value.is-negative { color: var(--harvest-deep); }
+.glance-label { font-size: 12.5px; color: var(--ink-soft); line-height: 1.4; }
+
+.glance-row2 {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 18px;
+  margin-bottom: 10px;
+}
+.glance-chart-card, .glance-activity-card {
+  background: var(--white);
+  border: 1px solid var(--husk-deep);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 20px rgba(27, 67, 50, 0.06);
+}
+.glance-chart-card h3, .glance-activity-card h3 {
+  font-family: var(--serif);
+  font-size: 16px;
+  color: var(--soil);
+  margin: 0 0 14px;
+}
+.glance-loading { color: var(--ink-soft); font-size: 13.5px; text-align: center; padding: 20px 0; }
+
+.glance-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  height: 170px;
+  padding: 0 2px;
+}
+.glance-year-col { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; }
+.glance-bars { display: flex; align-items: flex-end; gap: 3px; height: 100%; }
+.glance-bar { width: 12px; border-radius: 4px 4px 0 0; transition: height 0.6s ease; }
+.glance-bar.income { background: linear-gradient(180deg, var(--paddy), var(--soil-soft)); }
+.glance-bar.expense { background: linear-gradient(180deg, var(--harvest), var(--harvest-deep)); }
+.glance-year-label { font-size: 11.5px; color: var(--ink-soft); margin-top: 6px; }
+.glance-legend { display: flex; justify-content: center; gap: 4px; align-items: center; font-size: 12.5px; color: var(--ink-soft); margin-top: 12px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.dot-income { background: var(--paddy); }
+.dot-expense { background: var(--harvest); }
+
+.glance-activity { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
+.glance-activity li {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  font-size: 13.5px; padding-bottom: 11px; border-bottom: 1px dashed var(--husk-deep);
+}
+.glance-activity li:last-child { border-bottom: none; padding-bottom: 0; }
+.glance-activity .ga-cat { color: var(--ink); }
+.glance-activity .ga-amt { font-weight: 700; white-space: nowrap; }
+.glance-activity .ga-amt.income { color: var(--paddy-deep); }
+.glance-activity .ga-amt.expense { color: var(--harvest-deep); }
+
+@media (max-width: 900px) {
+  .glance-kpis { grid-template-columns: repeat(2, 1fr); }
+  .glance-row2 { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glance-bar { transition: none; }
+}
+
 /* ---------- section divider (paddy row motif) ---------- */
 .divider {
   width: 100%;
