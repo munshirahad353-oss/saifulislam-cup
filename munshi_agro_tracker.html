@@ -12,6 +12,23 @@
 <meta name="apple-mobile-web-app-title" content="এগ্রো ট্র্যাকার">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>মুন্সী এগ্রো — হিসাব-নিকাশ</title>
+<meta name="description" content="মুন্সী এগ্রো — দৈনন্দিন আয়-ব্যয়ের লাইভ হিসাব-নিকাশ ট্র্যাকার। বছরভিত্তিক আয়-ব্যয়, ইনভেস্টর ও স্টাফ ব্যবস্থাপনা।">
+<link rel="canonical" href="https://munshirahad353-oss.github.io/saifulislam-cup/munshi_agro_tracker.html">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="bn_BD">
+<meta property="og:site_name" content="মুন্সী এগ্রো">
+<meta property="og:title" content="মুন্সী এগ্রো — হিসাব-নিকাশ ট্র্যাকার">
+<meta property="og:description" content="দৈনন্দিন আয়-ব্যয়ের লাইভ হিসাব-নিকাশ, বছরভিত্তিক রিপোর্ট ও বিনিয়োগ ব্যবস্থাপনা।">
+<meta property="og:url" content="https://munshirahad353-oss.github.io/saifulislam-cup/munshi_agro_tracker.html">
+<meta property="og:image" content="https://munshirahad353-oss.github.io/saifulislam-cup/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="মুন্সী এগ্রো — স্মার্ট কৃষি, সমৃদ্ধ আগামী">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="মুন্সী এগ্রো — হিসাব-নিকাশ ট্র্যাকার">
+<meta name="twitter:description" content="দৈনন্দিন আয়-ব্যয়ের লাইভ হিসাব-নিকাশ, বছরভিত্তিক রিপোর্ট ও বিনিয়োগ ব্যবস্থাপনা।">
+<meta name="twitter:image" content="https://munshirahad353-oss.github.io/saifulislam-cup/og-image.jpg">
+<meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla&display=swap" rel="stylesheet">
@@ -366,6 +383,17 @@
   .tag-none { background: #FDE2DA; color: var(--red); }
   .tag-ok { background: var(--soft); color: var(--dark); }
   .pending-leave-count { display: inline-block; min-width: 20px; padding: 0 7px; margin-left: 6px; border-radius: 20px; background: var(--amber); color: var(--white); font-size: 12px; font-weight: 700; text-align: center; }
+  /* attendance & salary summary card */
+  .att-card { border: 1.5px solid var(--soft); border-radius: 12px; padding: 14px 16px; background: var(--bg); margin-bottom: 4px; }
+  .att-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 16px; margin-bottom: 12px; }
+  .att-stat { display: flex; flex-direction: column; }
+  .att-stat-label { font-size: 12px; color: var(--muted); }
+  .att-stat-value { font-size: 16px; font-weight: 700; color: var(--dark); }
+  .att-stat-value.warn { color: var(--red); }
+  .att-payable { border-top: 1.5px dashed var(--soft); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .att-payable-label { font-size: 13.5px; color: var(--muted); }
+  .att-payable-value { font-size: 20px; font-weight: 700; color: var(--green); }
+  .att-note { font-size: 11.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
   .notice-box h2 { margin: 0 0 8px; font-size: 19px; color: var(--dark); }
   .notice-box.error h2 { color: var(--red); }
   .notice-code {
@@ -974,7 +1002,13 @@
     <h2 id="staffDetailTitle">স্টাফ</h2>
     <p class="view-note" id="staffDetailSub"></p>
 
-    <h3 style="font-size:15px; margin:16px 0 8px;">কাজের রিপোর্ট</h3>
+    <h3 style="font-size:15px; margin:16px 0 8px;">📊 হাজিরা ও বেতন হিসাব</h3>
+    <div class="day-toolbar">
+      <input type="month" id="staffAttMonth" aria-label="মাস বাছাই করুন">
+    </div>
+    <div id="staffAttSummary"></div>
+
+    <h3 style="font-size:15px; margin:20px 0 8px;">কাজের রিপোর্ট</h3>
     <div style="margin-bottom:10px;">
       <select id="staffDetailDateFilter" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:13.5px;">
         <option value="">সব তারিখ দেখুন</option>
@@ -1879,6 +1913,48 @@ document.getElementById("staffDailyToday").addEventListener("click", () => {
   renderStaffDaily();
 });
 
+function renderStaffAttendance(r, monthStr){
+  const box = document.getElementById("staffAttSummary");
+  const monthInput = document.getElementById("staffAttMonth");
+  if (!monthStr) monthStr = monthInput.value || todayISO().slice(0, 7);
+  monthInput.value = monthStr;
+
+  const [yy, mm] = monthStr.split("-").map(Number);
+  const daysInMonth = new Date(yy, mm, 0).getDate();
+  const today = todayISO();
+  const isCurrentMonth = monthStr === today.slice(0, 7);
+  const daysElapsed = isCurrentMonth ? Number(today.slice(8, 10)) : daysInMonth;
+
+  const reportDates = new Set((r.reports || []).filter(rep => rep.date && rep.date.startsWith(monthStr)).map(rep => rep.date));
+  const leaveDates = new Set((r.leaves || []).filter(lv => lv.status === "approved" && lv.date && lv.date.startsWith(monthStr)).map(lv => lv.date));
+  const presentDays = reportDates.size;
+  const leaveDays = leaveDates.size;
+  const absentDays = Math.max(0, daysElapsed - presentDays - leaveDays);
+
+  const salary = Number(r.salary) || 0;
+  const perDayRate = salary / daysInMonth;
+  const deduction = absentDays * perDayRate;
+  const payable = Math.max(0, salary - deduction);
+
+  box.innerHTML = `
+    <div class="att-card">
+      <div class="att-grid">
+        <div class="att-stat"><span class="att-stat-label">রিপোর্ট দিয়েছেন</span><span class="att-stat-value">${presentDays} দিন</span></div>
+        <div class="att-stat"><span class="att-stat-label">অনুমোদিত ছুটি</span><span class="att-stat-value">${leaveDays} দিন</span></div>
+        <div class="att-stat"><span class="att-stat-label">অনুপস্থিত (হিসাবহীন)</span><span class="att-stat-value${absentDays > 0 ? " warn" : ""}">${absentDays} দিন</span></div>
+        <div class="att-stat"><span class="att-stat-label">মাসিক বেতন</span><span class="att-stat-value">${salary ? "৳" + salary.toLocaleString("bn-BD") : "নির্ধারিত নয়"}</span></div>
+      </div>
+      <div class="att-payable">
+        <span class="att-payable-label">প্রদেয় বেতন (অনুপস্থিতি বাদ দিয়ে)</span>
+        <span class="att-payable-value">৳${Math.round(payable).toLocaleString("bn-BD")}</span>
+      </div>
+      <div class="att-note">
+        হিসাব: প্রতিদিনের হার = মাসিক বেতন ÷ ${daysInMonth} দিন। ${isCurrentMonth ? "চলতি মাসের " + daysElapsed + " দিন পর্যন্ত" : "পুরো মাস"} হিসাব করা হয়েছে।
+        ${salary ? "" : " বেতন এখনো ঠিক করা হয়নি — স্টাফ তালিকায় 'বেতন' বাটনে চেপে দিন।"}
+      </div>
+    </div>`;
+}
+
 function setStaffContact(id){
   const r = (DATA.staff.approved || []).find(r=>r.id===id);
   if (!r) return;
@@ -1942,6 +2018,8 @@ function renderStaffDetailModal(dateFilterValue){
   document.getElementById("staffDetailTitle").textContent = r.name || r.email;
   document.getElementById("staffDetailSub").textContent =
     `Employee ID: ${r.employeeId || "—"} · ${r.email}${r.phone ? " · 📞 " + r.phone : ""}`;
+
+  renderStaffAttendance(r);
 
   // date filter dropdown — built from this staff's report dates
   const filterEl = document.getElementById("staffDetailDateFilter");
@@ -2009,6 +2087,10 @@ function decideLeave(staffId, leaveId, decision){
   renderStaffLists();
 }
 
+document.getElementById("staffAttMonth").addEventListener("change", (ev) => {
+  const r = (DATA.staff.approved || []).find(r => r.id === staffDetailCurrentId);
+  if (r) renderStaffAttendance(r, ev.target.value);
+});
 document.getElementById("staffDetailDateFilter").addEventListener("change", (ev) => {
   renderStaffDetailModal(ev.target.value);
 });

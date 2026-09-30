@@ -231,6 +231,38 @@
     })();
   }
 
+  // ---------- Generic scroll count-up for .stat-value (bn digits) ----------
+  (function setupStatsStrip() {
+    var els = Array.prototype.slice.call(document.querySelectorAll(".stat-value"));
+    if (!els.length) return;
+    var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function bnDigits(n) { return String(n).replace(/[0-9]/g, function (d) { return "০১২৩৪৫৬৭৮৯"[d]; }); }
+    function animate(el) {
+      var target = parseFloat(el.getAttribute("data-target")) || 0;
+      var suffix = el.getAttribute("data-suffix") || "";
+      if (reduceMotion) { el.textContent = bnDigits(target) + suffix; return; }
+      var dur = 1000, start = null;
+      function step(ts) {
+        if (!start) start = ts;
+        var p = Math.min(1, (ts - start) / dur);
+        var cur = Math.round(target * (1 - Math.pow(1 - p, 3)));
+        el.textContent = bnDigits(cur) + suffix;
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    if ("IntersectionObserver" in window) {
+      var obs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) { animate(entry.target); obs.unobserve(entry.target); }
+        });
+      }, { threshold: 0.4 });
+      els.forEach(function (el) { obs.observe(el); });
+    } else {
+      els.forEach(animate);
+    }
+  })();
+
   // ---------- "এক নজরে" dashboard: pulled live from the embedded tracker (same-origin) ----------
   (function setupGlance() {
     var frame = document.getElementById("heroTrackerFrame");

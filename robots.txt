@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /index.html
+Allow: /style.css
+Allow: /script.js
+Disallow: /munshi_agro_tracker.html
+
+Sitemap: https://munshirahad353-oss.github.io/saifulislam-cup/sitemap.xml
