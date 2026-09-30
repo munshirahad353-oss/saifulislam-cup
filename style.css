@@ -948,7 +948,7 @@ a:focus-visible, button:focus-visible {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-  margin: 8px 0 32px;
+  margin: 0 0 28px;
 }
 .stat-item {
   text-align: center;
