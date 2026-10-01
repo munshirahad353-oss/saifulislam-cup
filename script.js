@@ -269,41 +269,37 @@
     var sub = document.getElementById("glanceSub");
     if (!frame) return;
 
-    function fmtTaka(n) {
-      n = Math.round(n || 0);
-      return "৳" + n.toLocaleString("bn-BD");
-    }
     function bnDigits(n) {
       return String(n).replace(/[0-9]/g, function (d) { return "০১২৩৪৫৬৭৮৯"[d]; });
     }
-    function animateValue(el, to, isMoney) {
-      var from = 0;
-      var dur = 900;
-      var start = null;
+    function fmtPct(p) {
+      if (p == null) return "—";
+      var sign = p >= 0 ? "+" : "−";
+      return sign + bnDigits(Math.abs(p).toFixed(1)) + "%";
+    }
+    function animateCount(el, to) {
+      var dur = 900, start = null;
       function step(ts) {
         if (!start) start = ts;
         var p = Math.min(1, (ts - start) / dur);
-        var cur = from + (to - from) * (1 - Math.pow(1 - p, 3));
-        el.textContent = isMoney ? fmtTaka(cur) : bnDigits(Math.round(cur));
+        el.textContent = bnDigits(Math.round(to * (1 - Math.pow(1 - p, 3))));
         if (p < 1) requestAnimationFrame(step);
       }
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        el.textContent = isMoney ? fmtTaka(to) : bnDigits(Math.round(to));
+        el.textContent = bnDigits(to);
       } else {
         requestAnimationFrame(step);
       }
     }
 
-    function renderChart(yearly) {
+    function renderChart(yearlyTrend) {
       var chartEl = document.getElementById("glanceChart");
-      if (!yearly || !yearly.length) {
+      if (!yearlyTrend || !yearlyTrend.length) {
         chartEl.innerHTML = '<div class="glance-loading">এখনো কোনো এন্ট্রি নেই।</div>';
         return;
       }
-      var max = 1;
-      yearly.forEach(function (y) { max = Math.max(max, y.income, y.expense); });
       chartEl.innerHTML = "";
-      yearly.forEach(function (y) {
+      yearlyTrend.forEach(function (y) {
         var col = document.createElement("div");
         col.className = "glance-year-col";
         var bars = document.createElement("div");
@@ -323,8 +319,9 @@
         col.appendChild(label);
         chartEl.appendChild(col);
         requestAnimationFrame(function () {
-          inc.style.height = Math.max(4, (y.income / max) * 150) + "px";
-          exp.style.height = Math.max(4, (y.expense / max) * 150) + "px";
+          // yearlyTrend values are already a 0–100 relative index — no taka figures involved.
+          inc.style.height = Math.max(4, (y.incomeIndex / 100) * 150) + "px";
+          exp.style.height = Math.max(4, (y.expenseIndex / 100) * 150) + "px";
         });
       });
     }
@@ -341,34 +338,26 @@
         var catSpan = document.createElement("span");
         catSpan.className = "ga-cat";
         catSpan.textContent = e.category + (e.date ? " · " + e.date : e.year ? " · " + e.year + " বছর" : "");
-        var amtSpan = document.createElement("span");
-        amtSpan.className = "ga-amt " + e.type;
-        amtSpan.textContent = (e.type === "income" ? "+" : "−") + fmtTaka(e.amount);
+        var tagSpan = document.createElement("span");
+        tagSpan.className = "ga-amt " + e.type;
+        tagSpan.textContent = e.type === "income" ? "আয়" : "খরচ";
         li.appendChild(catSpan);
-        li.appendChild(amtSpan);
+        li.appendChild(tagSpan);
         listEl.appendChild(li);
       });
     }
 
     function applySummary(sum) {
       if (!sum) return;
-      animateValue(document.getElementById("kpiIncome"), sum.totalIncome, true);
-      animateValue(document.getElementById("kpiExpense"), sum.totalExpense, true);
+      document.getElementById("kpiIncome").textContent = fmtPct(sum.incomeGrowthPct);
+      document.getElementById("kpiExpense").textContent = fmtPct(sum.expenseGrowthPct);
       var profitEl = document.getElementById("kpiProfit");
-      profitEl.classList.toggle("is-negative", sum.netProfit < 0);
-      animateValue(profitEl, sum.netProfit, true);
-      animateValue(document.getElementById("kpiInvestors"), sum.investorsCount, false);
-      var growthEl = document.getElementById("kpiGrowth");
-      if (sum.growthPct == null) {
-        growthEl.textContent = "—";
-      } else {
-        var sign = sum.growthPct >= 0 ? "+" : "−";
-        growthEl.textContent = sign + bnDigits(Math.abs(sum.growthPct).toFixed(1)) + "%";
-        growthEl.classList.toggle("is-negative", sum.growthPct < 0);
-      }
-      renderChart(sum.yearly);
-      renderActivity(sum.recentEntries);
-      if (sub) sub.textContent = "লাইভ ট্র্যাকার থেকে সরাসরি হালনাগাদ তথ্য";
+      profitEl.textContent = fmtPct(sum.profitGrowthPct);
+      profitEl.classList.toggle("is-negative", sum.profitGrowthPct != null && sum.profitGrowthPct < 0);
+      animateCount(document.getElementById("kpiInvestors"), sum.investorsCount || 0);
+      renderChart(sum.yearlyTrend);
+      renderActivity(sum.recentActivity);
+      if (sub) sub.textContent = "লাইভ ট্র্যাকার থেকে সরাসরি হালনাগাদ তথ্য (নির্দিষ্ট টাকার অঙ্ক শুধু ইনভেস্টর লগইনে দেখা যাবে)";
     }
 
     function tryPull() {
@@ -383,7 +372,6 @@
 
     frame.addEventListener("load", function () {
       if (!tryPull()) {
-        // tracker's own data (Firebase) may still be loading — retry briefly.
         var tries = 0;
         var iv = setInterval(function () {
           tries++;

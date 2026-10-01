@@ -1565,12 +1565,18 @@ function renderAll(){
    Same-origin only: index.html reads this from the hero iframe. No personal
    data (names, NID, salary, phone, notes) is included — totals and category
    labels only. */
+/* Public summary for index.html — deliberately privacy-safe.
+   No taka amounts ever leave this function: only growth percentages,
+   normalized (0–100) relative-trend indices, category *shares*, and
+   counts. Someone opening devtools on the public page still can't read
+   your actual revenue, expense, or profit figures this way. Full taka
+   figures stay inside the tracker itself, behind admin/investor login. */
 function getMunshiSummary(){
   const entries = DATA.entries || [];
   let totalIncome = 0, totalExpense = 0;
-  const byYear = [];              // [{year, income, expense}] in first-seen order
+  const byYear = [];
   const yearIndex = {};
-  const catTotals = {};           // income-only, by category
+  const catTotals = {};
 
   entries.forEach(e => {
     const amt = Number(e.amount) || 0;
@@ -1585,33 +1591,49 @@ function getMunshiSummary(){
     byYear[yearIndex[y]][e.type === "income" ? "income" : "expense"] += amt;
   });
 
-  let growthPct = null;
+  function pctChange(prev, last) {
+    if (prev === 0) return null;
+    return ((last - prev) / Math.abs(prev)) * 100;
+  }
+  let incomeGrowthPct = null, expenseGrowthPct = null, profitGrowthPct = null;
   if (byYear.length >= 2) {
     const prev = byYear[byYear.length - 2];
     const last = byYear[byYear.length - 1];
-    const prevNet = prev.income - prev.expense;
-    const lastNet = last.income - last.expense;
-    if (prevNet !== 0) growthPct = ((lastNet - prevNet) / Math.abs(prevNet)) * 100;
+    incomeGrowthPct = pctChange(prev.income, last.income);
+    expenseGrowthPct = pctChange(prev.expense, last.expense);
+    profitGrowthPct = pctChange(prev.income - prev.expense, last.income - last.expense);
   }
 
-  const topCategories = Object.entries(catTotals)
+  // Normalize the yearly chart to 0–100 so relative trend shows without
+  // exposing the underlying taka scale.
+  const recentYears = byYear.slice(-6);
+  let maxVal = 1;
+  recentYears.forEach(y => { maxVal = Math.max(maxVal, y.income, y.expense); });
+  const yearlyTrend = recentYears.map(y => ({
+    year: y.year,
+    incomeIndex: Math.round((y.income / maxVal) * 100),
+    expenseIndex: Math.round((y.expense / maxVal) * 100)
+  }));
+
+  // Category *shares* (% of total income), not amounts.
+  const topCategoryShares = Object.entries(catTotals)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
-    .map(([category, amount]) => ({ category, amount }));
+    .map(([category, amount]) => ({
+      category,
+      sharePct: totalIncome > 0 ? Math.round((amount / totalIncome) * 100) : 0
+    }));
 
-  const recentEntries = entries.slice(-5).reverse().map(e => ({
-    type: e.type, category: e.category, amount: Number(e.amount) || 0,
-    date: e.date || null, year: e.year || null
+  const recentActivity = entries.slice(-5).reverse().map(e => ({
+    type: e.type, category: e.category, date: e.date || null, year: e.year || null
   }));
 
   return {
-    totalIncome, totalExpense,
-    netProfit: totalIncome - totalExpense,
+    incomeGrowthPct, expenseGrowthPct, profitGrowthPct,
     investorsCount: ((DATA.investors && DATA.investors.approved) || []).length,
-    growthPct,
-    yearly: byYear.slice(-6),   // keep the chart readable — last 6 years
-    topCategories,
-    recentEntries
+    yearlyTrend,
+    topCategoryShares,
+    recentActivity
   };
 }
 window.getMunshiSummary = getMunshiSummary;
