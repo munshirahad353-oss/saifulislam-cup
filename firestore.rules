@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // মুন্সী এগ্রো ট্র্যাকারের একমাত্র ডকুমেন্ট।
+    // পড়া (read): সবার জন্য খোলা থাকবে — কারণ পাবলিক ভিউ, ইনভেস্টর ভিউ,
+    //   আর "এক নজরে" (index.html) সেকশন — এরা কেউই Firebase Authentication
+    //   ব্যবহার করে না, তাই read বন্ধ করলে এই সবগুলো ফিচার ভেঙে যাবে।
+    //   (এটাই লেভেল ১-এর সীমাবদ্ধতা — ডেটা এখনো সম্পূর্ণ লুকানো না।)
+    // লেখা (write): শুধু Firebase Authentication দিয়ে লগইন করা অ্যাডমিন
+    //   একাউন্ট লিখতে/বদলাতে/মুছতে পারবে। আর কেউ না — এমনকি ব্রাউজারের
+    //   Console থেকে চেষ্টা করলেও আটকে যাবে।
+    match /munshiAgro/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // বাকি সব কিছু — ডিফল্টে বন্ধ।
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
