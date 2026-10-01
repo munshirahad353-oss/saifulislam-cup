@@ -34,6 +34,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
 <style>
   :root {
     --dark: #1B4332;
@@ -1077,13 +1078,16 @@ const FIREBASE_CONFIG = {
 const FIREBASE_ENABLED = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
 let cloudDocRef = null;
 let suppressCloudEcho = false;
+let authInstance = null;
 if (FIREBASE_ENABLED) {
   try {
     firebase.initializeApp(FIREBASE_CONFIG);
     cloudDocRef = firebase.firestore().collection("munshiAgro").doc("shared");
+    authInstance = firebase.auth();
   } catch (err) {
     console.error("Firebase init failed", err);
     cloudDocRef = null;
+    authInstance = null;
   }
 }
 function allCats(type){
@@ -1123,13 +1127,15 @@ function fmtDate(d){
 }
 
 /* ---------- ADMIN ACCESS ----------
-   এটি একটি static (ব্যাকএন্ডবিহীন) ওয়েবসাইট, তাই এই পাসওয়ার্ড শুধু casual
-   দর্শকদের এডিট করা থেকে ঠেকানোর একটা সাধারণ বাধা — সত্যিকারের নিরাপত্তা নয়।
-   কেউ ব্রাউজারের "View Source" বা DevTools থেকে এই পাসওয়ার্ড দেখে ফেলতে পারবে।
-   সংবেদনশীল/গোপন কিছু রক্ষা করার জন্য এর ওপর ভরসা করবেন না।
-   নিচের পাসওয়ার্ডটা বদলে নিজের একটা পাসওয়ার্ড বসিয়ে নিন: */
-const ADMIN_PASSWORD = "munshi2026";
-let isAdmin = localStorage.getItem("munshiIsAdmin") === "true";
+   যখন Firebase কনফিগার করা থাকে, অ্যাডমিন লগইন Firebase Authentication
+   (ইমেইল + পাসওয়ার্ড) দিয়ে হয় — পাসওয়ার্ড কখনো এই কোডে/পেজে থাকে না,
+   Firebase নিজে যাচাই করে। Firebase Console > Authentication > Users থেকে
+   অ্যাডমিনের ইমেইল/পাসওয়ার্ড বানিয়ে নিন।
+   Firebase কনফিগার করা না থাকলে (যেমন লোকাল টেস্টের সময়) নিচের সাধারণ
+   পাসওয়ার্ড-ভিত্তিক পদ্ধতিতে ফিরে যায় — এটা তখন সত্যিকারের নিরাপত্তা না,
+   শুধু casual দর্শকদের ঠেকানোর একটা সাধারণ বাধা মাত্র। */
+const ADMIN_PASSWORD = "munshi2026"; // শুধু Firebase বন্ধ থাকলে ব্যবহৃত হয়
+let isAdmin = FIREBASE_ENABLED ? false : (localStorage.getItem("munshiIsAdmin") === "true");
 let isStaff = localStorage.getItem("munshiIsStaff") === "true" && !isAdmin;
 let staffEmail = localStorage.getItem("munshiStaffEmail") || null;
 function canEnterData(){ return isAdmin || isStaff; }
@@ -2299,16 +2305,31 @@ document.getElementById("loginForm").addEventListener("submit", (ev) => {
   const tab = loginCfg.tabs[loginTab];
   const values = {};
   tab.fields.forEach(f => { values[f.name] = document.getElementById("lf_" + f.name).value; });
-  const res = tab.onSubmit(values) || {};
-  if (res.error) { setLoginMsg(res.error, "error"); return; }
-  if (res.success) {
-    setLoginMsg(res.success, "success");
-    document.getElementById("loginFields").innerHTML = "";
-    document.getElementById("loginSubmit").textContent = "ঠিক আছে";
-    loginDone = true;
-    return;
+
+  const submitBtn = document.getElementById("loginSubmit");
+  const finish = (res) => {
+    res = res || {};
+    submitBtn.disabled = false;
+    submitBtn.textContent = loginDone ? "ঠিক আছে" : (tab.submit || "লগইন");
+    if (res.error) { setLoginMsg(res.error, "error"); return; }
+    if (res.success) {
+      setLoginMsg(res.success, "success");
+      document.getElementById("loginFields").innerHTML = "";
+      submitBtn.textContent = "ঠিক আছে";
+      loginDone = true;
+      return;
+    }
+    closeModal("loginOverlay");
+  };
+
+  const result = tab.onSubmit(values);
+  if (result && typeof result.then === "function") {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "অপেক্ষা করুন…";
+    result.then(finish).catch((err) => finish({ error: (err && err.message) || "কিছু একটা ভুল হয়েছে।" }));
+  } else {
+    finish(result);
   }
-  closeModal("loginOverlay");
 });
 document.getElementById("loginClose").addEventListener("click", () => closeModal("loginOverlay"));
 document.getElementById("loginOverlay").addEventListener("click", (ev) => {
@@ -2836,13 +2857,56 @@ document.getElementById("navGrid").addEventListener("click", (ev)=>{
 document.getElementById("adminBtn").addEventListener("click", () => {
   if (isAdmin) {
     showConfirmDialog("অ্যাডমিন মোড থেকে বের হয়ে পাবলিক (শুধু-দেখা) ভিউতে যেতে চান?", () => {
-      isAdmin = false;
-      localStorage.setItem("munshiIsAdmin", "false");
-      applyAdminUI();
-      renderAll();
+      if (FIREBASE_ENABLED && authInstance) {
+        authInstance.signOut();   // onAuthStateChanged সামলে নেবে isAdmin=false ও UI আপডেট
+      } else {
+        isAdmin = false;
+        localStorage.setItem("munshiIsAdmin", "false");
+        applyAdminUI();
+        renderAll();
+      }
     });
     return;
   }
+
+  if (FIREBASE_ENABLED && authInstance) {
+    showLogin({
+      icon: "🔒",
+      title: "অ্যাডমিন লগইন",
+      sub: "Firebase-এ তৈরি করা অ্যাডমিন ইমেইল ও পাসওয়ার্ড দিন",
+      tabs: [{
+        submit: "লগইন",
+        fields: [
+          { name: "email", label: "ইমেইল", type: "email", placeholder: "admin@example.com" },
+          { name: "pass", label: "পাসওয়ার্ড", type: "password", placeholder: "••••••••" }
+        ],
+        onSubmit: (v) => {
+          const email = (v.email || "").trim();
+          if (!email || !v.pass) return { error: "ইমেইল ও পাসওয়ার্ড দুটোই দিন।" };
+          return authInstance.signInWithEmailAndPassword(email, v.pass)
+            .then(() => {
+              isStaff = false;
+              localStorage.setItem("munshiIsStaff", "false");
+              // isAdmin ও UI আপডেট হবে onAuthStateChanged থেকে — এখানে শুধু মডাল বন্ধ করলেই চলবে
+              return {};
+            })
+            .catch((err) => {
+              const code = err && err.code;
+              const msg =
+                code === "auth/invalid-email" ? "ইমেইলের ফরম্যাট ঠিক নেই।" :
+                code === "auth/user-not-found" || code === "auth/invalid-credential" ? "এই ইমেইল দিয়ে কোনো অ্যাডমিন একাউন্ট পাওয়া যায়নি।" :
+                code === "auth/wrong-password" ? "পাসওয়ার্ড ভুল হয়েছে।" :
+                code === "auth/too-many-requests" ? "অনেকবার ভুল চেষ্টা হয়েছে — কিছুক্ষণ পর আবার চেষ্টা করুন।" :
+                "লগইন করা যায়নি — ইমেইল ও পাসওয়ার্ড আবার দেখে নিন।";
+              return { error: msg };
+            });
+        }
+      }]
+    });
+    return;
+  }
+
+  // Firebase কনফিগার করা না থাকলে পুরনো সাধারণ পাসওয়ার্ড পদ্ধতি (শুধু লোকাল টেস্টের জন্য)
   showLogin({
     icon: "🔒",
     title: "অ্যাডমিন লগইন",
@@ -2863,6 +2927,18 @@ document.getElementById("adminBtn").addEventListener("click", () => {
     }]
   });
 });
+
+if (FIREBASE_ENABLED && authInstance) {
+  authInstance.onAuthStateChanged((user) => {
+    isAdmin = !!user;
+    if (isAdmin) {
+      isStaff = false;
+      localStorage.setItem("munshiIsStaff", "false");
+    }
+    applyAdminUI();
+    renderAll();
+  });
+}
 
 document.getElementById("staffBtn").addEventListener("click", () => {
   if (isStaff) {
