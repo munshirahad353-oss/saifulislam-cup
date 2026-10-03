@@ -27,7 +27,7 @@
 }
 
 * { box-sizing: inherit; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overscroll-behavior-y: contain; }
 
 body {
   margin: 0;
