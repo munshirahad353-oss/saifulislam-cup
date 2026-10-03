@@ -425,57 +425,48 @@
   .toast.error { background: var(--red); color: var(--white); }
   @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 
-/* ---------- PWA install banner (top of page) ---------- */
-.install-banner {
+/* ---------- PWA install button (as a 4th nav-card, next to Project/Invest buttons) ---------- */
+.install-nav-card {
   position: relative;
-  z-index: 70;
-  background: linear-gradient(120deg, var(--soil, var(--dark)), var(--paddy, var(--mid)));
-  color: #fff;
-  padding: 10px 16px;
-  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  display: block;
+  padding: 0;
+  border: 1.5px dashed var(--mid);
+  background: var(--amber-soft);
 }
-.install-banner[hidden] { display: none; }
-.install-banner-inner {
-  max-width: 1080px;
-  margin: 0 auto;
+.install-nav-card[hidden] { display: none; }
+.install-btn-nav {
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 16px 10px;
+  font-family: inherit;
+  cursor: pointer;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  position: relative;
+  gap: 6px;
 }
-.install-banner-icon {
-  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.18);
-  display: flex; align-items: center; justify-content: center; font-size: 18px;
+.install-close-inline {
+  position: absolute;
+  top: -8px; right: -8px;
+  border: none;
+  background: var(--white);
+  color: var(--muted);
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
 }
-.install-banner-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.install-banner-text strong { font-size: 13.5px; font-weight: 700; line-height: 1.3; }
-.install-banner-text span { font-size: 12px; opacity: 0.92; line-height: 1.4; }
-.install-btn {
-  background: #fff; color: var(--soil, var(--dark)); border: none; border-radius: 999px;
-  padding: 8px 16px; font-family: inherit; font-weight: 700; font-size: 13px;
-  cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: transform 0.15s ease;
-}
-.install-btn:hover { transform: translateY(-1px); }
-.install-close {
-  border: none; background: none; color: #fff; opacity: 0.85; font-size: 15px;
-  cursor: pointer; padding: 6px 2px 6px 6px; flex-shrink: 0;
-}
-.install-close:hover { opacity: 1; }
+.install-close-inline:hover { color: var(--red); }
 .install-hint {
   position: absolute; left: 0; top: calc(100% + 8px); width: min(260px, 80vw);
-  background: var(--white, #fff); color: var(--ink, var(--text));
+  background: var(--white); color: var(--text);
   border-radius: 12px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18); z-index: 2;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18); z-index: 5;
 }
 .install-hint[hidden] { display: none; }
-@media (max-width: 560px) {
-  .install-banner-text span { display: none; }
-  .install-banner-inner { gap: 8px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .install-btn { transition: none; }
-}
 </style>
 <!-- Google Analytics (GA4) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-3DZPQBGPBJ"></script>
@@ -487,18 +478,6 @@
 </script>
 </head>
 <body>
-<div class="install-banner" id="installPill" hidden>
-  <div class="install-banner-inner">
-    <span class="install-banner-icon">📲</span>
-    <span class="install-banner-text">
-      <strong>অ্যাপ হিসেবে ইনস্টল করুন</strong>
-      <span>হোমস্ক্রিন থেকে সরাসরি খুলুন — ইন্টারনেট কম থাকলেও চলবে।</span>
-      <span class="install-hint" id="installHint" hidden>Safari-তে নিচের শেয়ার (⬆️) বাটন চেপে "Add to Home Screen" বাছুন।</span>
-    </span>
-    <button type="button" class="install-btn" id="installBtn">ইনস্টল করুন</button>
-    <button type="button" class="install-close" id="installClose" aria-label="বন্ধ করুন">✕</button>
-  </div>
-</div>
 
 <div class="page-shell">
 <header>
@@ -514,10 +493,15 @@
 </header>
 
 <div class="container" id="publicView">
-  <div class="nav-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));">
+  <div class="nav-grid">
     <button type="button" class="nav-card" id="btnProjectInfo"><span class="nav-icon">📄</span><span class="nav-label">Project সম্পর্কে</span></button>
     <button type="button" class="nav-card" id="btnInvestInfo"><span class="nav-icon">📄</span><span class="nav-label">Invest সম্পর্কে</span></button>
     <button type="button" class="nav-card" id="btnInvestNow"><span class="nav-icon">💰</span><span class="nav-label">Invest করুন</span></button>
+    <span class="nav-card install-nav-card" id="installPill" hidden>
+      <button type="button" class="install-btn-nav" id="installBtn"><span class="nav-icon">📲</span><span class="nav-label">অ্যাপ ইনস্টল করুন</span></button>
+      <button type="button" class="install-close-inline" id="installClose" aria-label="বন্ধ করুন">✕</button>
+      <span class="install-hint" id="installHint" hidden>Safari-তে নিচের শেয়ার (⬆️) বাটন চেপে "Add to Home Screen" বাছুন।</span>
+    </span>
   </div>
 </div>
 

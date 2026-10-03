@@ -65,18 +65,6 @@
 <body>
 
 <a class="skip-link" href="#main">মূল কনটেন্টে যান</a>
-<div class="install-banner" id="installPill" hidden>
-  <div class="install-banner-inner">
-    <span class="install-banner-icon">📲</span>
-    <span class="install-banner-text">
-      <strong>অ্যাপ হিসেবে ইনস্টল করুন</strong>
-      <span>হোমস্ক্রিন থেকে সরাসরি খুলুন — ইন্টারনেট কম থাকলেও চলবে।</span>
-      <span class="install-hint" id="installHint" hidden>Safari-তে নিচের শেয়ার (⬆️) বাটন চেপে "Add to Home Screen" বাছুন।</span>
-    </span>
-    <button type="button" class="install-btn" id="installBtn">ইনস্টল করুন</button>
-    <button type="button" class="install-close" id="installClose" aria-label="বন্ধ করুন">✕</button>
-  </div>
-</div>
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"><span></span></div>
 <div class="field-lines" aria-hidden="true"></div>
 
@@ -143,6 +131,11 @@
           <button type="button" class="btn btn-ghost" data-tracker-btn="btnProjectInfo">📄 Project সম্পর্কে</button>
           <button type="button" class="btn btn-ghost" data-tracker-btn="btnInvestInfo">📄 Invest সম্পর্কে</button>
           <a href="https://wa.me/8801581477854" class="btn btn-whatsapp" target="_blank" rel="noopener">💬 WhatsApp-এ কথা বলুন</a>
+          <span class="install-inline" id="installPill" hidden>
+            <button type="button" class="btn btn-ghost install-btn-inline" id="installBtn">📲 অ্যাপ ইনস্টল করুন</button>
+            <button type="button" class="install-close-inline" id="installClose" aria-label="বন্ধ করুন">✕</button>
+            <span class="install-hint" id="installHint" hidden>Safari-তে নিচের শেয়ার (⬆️) বাটন চেপে "Add to Home Screen" বাছুন।</span>
+          </span>
         </div>
       </div>
       <div class="hero-tracker">
