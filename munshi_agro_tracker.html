@@ -64,7 +64,7 @@
   html { scroll-padding-top: env(safe-area-inset-top, 0px); }
   * { box-sizing: border-box; }
   html, body { max-width: 100%; overflow-x: hidden; }
-  html, body { overscroll-behavior-y: contain; }
+  html, body { overflow-anchor: none; }
   body {
     margin: 0; font-family: 'Tiro Bangla', 'Noto Serif Bengali', system-ui, sans-serif;
     background: var(--bg); color: var(--text); min-height: 100%;
@@ -3267,6 +3267,17 @@ if (cloudDocRef) {
       navigator.serviceWorker.register("sw.js").catch(function () {});
     });
   }
+
+  // Only block pull-to-refresh when running as the installed standalone app —
+  // never when embedded as the hero iframe on index.html or opened as a normal
+  // browser tab, since that CSS was accidentally also swallowing normal mouse-
+  // wheel scrolling inside the embedded iframe.
+  (function limitOverscrollInStandaloneOnly() {
+    var standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
+    if (standalone) {
+      document.documentElement.style.overscrollBehaviorY = "contain";
+    }
+  })();
 
   (function setupInstallPill() {
     var pill = document.getElementById("installPill");
