@@ -232,6 +232,9 @@
   .leave-box .leave-actions button { border:none; border-radius:8px; padding:7px 14px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; }
   .leave-approve { background: var(--soft); color: var(--dark); }
   .leave-reject { background: #FDE2DA; color: var(--red); }
+  .leave-cancel { background: var(--amber-soft); color: var(--brown); }
+  .leave-status.cancelled { color: var(--red); }
+  .leave-cancel-note { font-size: 13px; color: var(--muted); margin-top: 4px; padding: 8px 10px; background: var(--amber-soft); border-radius: 8px; line-height: 1.5; }
   .leave-status { font-size: 13px; font-weight: 700; }
   .modal-close {
     position: absolute; top: 14px; left: 14px; background: var(--soft); border: none; border-radius: 50%;
@@ -396,6 +399,34 @@
   .att-payable-label { font-size: 13.5px; color: var(--muted); }
   .att-payable-value { font-size: 20px; font-weight: 700; color: var(--green); }
   .att-note { font-size: 11.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+  .att-pay-btn { margin-top: 12px; border: none; border-radius: 10px; padding: 9px 16px; background: var(--green); color: var(--white); font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .att-pay-btn:hover { opacity: 0.92; }
+  /* attendance calendar */
+  .att-cal-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); margin: 14px 0 8px; }
+  .att-cal-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .att-cal-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .att-calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
+  .att-cal-head { font-size: 10.5px; text-align: center; color: var(--muted); font-weight: 700; padding-bottom: 2px; }
+  .att-cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 12px; font-weight: 700; }
+  .att-cal-day.blank { visibility: hidden; }
+  .att-cal-day.present { background: var(--soft); color: var(--dark); }
+  .att-cal-day.leave { background: var(--amber-soft); color: var(--brown); }
+  .att-cal-day.absent { background: #FDE2DA; color: var(--red); }
+  .att-cal-day.future { background: var(--bg); color: var(--muted); border: 1px dashed var(--soft); }
+  /* payment history */
+  .pay-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; border-bottom: 1px dashed var(--soft); padding: 9px 0; font-size: 13.5px; flex-wrap: wrap; }
+  .pay-row:last-child { border-bottom: none; }
+  .pay-row .pay-amt { font-weight: 700; color: var(--green); }
+  .pay-row .pay-meta { font-size: 11.5px; color: var(--muted); }
+  /* performance ranking */
+  .perf-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--soft); font-size: 13.5px; }
+  .perf-row:last-child { border-bottom: none; }
+  .perf-rank { width: 22px; flex-shrink: 0; text-align: center; font-size: 14px; }
+  .perf-name { flex: 1; font-weight: 700; color: var(--dark); }
+  .perf-stat { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  /* alerts */
+  .alert-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #FDE2DA; border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; font-size: 13.5px; color: var(--red); }
+  .alert-row b { color: var(--dark); }
   .notice-box h2 { margin: 0 0 8px; font-size: 19px; color: var(--dark); }
   .notice-box.error h2 { color: var(--red); }
   .notice-code {
@@ -711,6 +742,8 @@
   <div class="card section-panel admin-hidden" id="staffCard" data-panel-id="panelStaff">
     <h2>স্টাফ ব্যবস্থাপনা</h2>
 
+    <div id="staffAlertsList"></div>
+
     <h3 style="font-size:15px;margin:6px 0 8px;">📨 ছুটির অনুরোধ <span class="pending-leave-count" id="pendingLeaveCount" style="display:none;">0</span></h3>
     <div id="pendingLeaveList" style="margin-bottom:22px;"></div>
 
@@ -718,9 +751,13 @@
     <div class="day-toolbar">
       <input type="date" id="staffDailyDate" aria-label="তারিখ বাছাই করুন">
       <button type="button" class="day-today-btn" id="staffDailyToday">আজ</button>
+      <button type="button" class="btn-outline" id="exportStaffCsvBtn">⬇️ এই মাসের বেতন-শীট CSV</button>
     </div>
     <div class="day-summary" id="staffDailySummary"></div>
     <div id="staffDailyList" style="margin-bottom:24px;"></div>
+
+    <h3 style="font-size:15px;margin:20px 0 8px;">📊 স্টাফ পারফরম্যান্স (রিপোর্ট ও ছুটি অনুযায়ী)</h3>
+    <div id="staffPerformanceList" style="margin-bottom:24px;"></div>
     <p class="view-note">এখন ডেটা ক্লাউডে (সব ডিভাইসে শেয়ার্ড) সিঙ্ক হয়, তাই স্টাফ তার নিজের ফোন থেকে "স্টাফ লগইন" দিয়ে অনুরোধ পাঠালে সেটা এখানে নিচে "অপেক্ষমাণ অনুরোধ"-এ দেখাবে। "অনুমোদন" চাপলেই সে এক্সেস পেয়ে যাবে — শুধু <b>এন্ট্রি যোগ</b> করতে পারবে, মুছতে বা অন্য কিছু বদলাতে পারবে না।</p>
     <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
       <button type="button" id="resetStaffBtn"
@@ -754,6 +791,12 @@
       <button type="button" id="markAttendanceBtn" class="btn" style="width:auto;">✅ আজকের হাজিরা দিন</button>
     </div>
     <div id="attendanceStatus" class="view-note" style="margin-bottom:18px;"></div>
+
+    <h3 style="font-size:15px; margin:6px 0 8px;">📅 এই মাসের হাজিরা</h3>
+    <div id="myAttendanceCalendar" style="margin-bottom:10px;"></div>
+
+    <h3 style="font-size:15px; margin:20px 0 8px;">💵 বেতন পরিশোধের ইতিহাস</h3>
+    <div id="myPaymentsList" style="margin-bottom:20px;"></div>
 
     <h3 style="font-size:15px; margin:6px 0 8px;">আজকের কাজের রিপোর্ট</h3>
     <textarea id="dailyReportInput" rows="3" placeholder="আজ কী কী কাজ করলেন সংক্ষেপে লিখুন..."
@@ -1832,6 +1875,60 @@ function renderStaffLists(){
   }
   renderPendingLeaves();
   renderStaffDaily();
+  renderStaffPerformance();
+  renderStaffAlerts();
+}
+
+// র‍্যাংকিং: কে সবচেয়ে বেশি রিপোর্ট দিয়েছে, কার ছুটি সবচেয়ে বেশি।
+function renderStaffPerformance(){
+  const container = document.getElementById("staffPerformanceList");
+  if (!container) return;
+  const staff = (DATA.staff.approved || []).map(r => {
+    ensureStaffExtras(r);
+    return {
+      r,
+      reportCount: (r.reports || []).length,
+      leaveCount: (r.leaves || []).filter(l => l.status === "approved").length
+    };
+  });
+  if (!staff.length) { container.innerHTML = `<div class="empty">এখনো কোনো স্টাফ অনুমোদিত হয়নি।</div>`; return; }
+  staff.sort((a, b) => b.reportCount - a.reportCount);
+  const medals = ["🥇", "🥈", "🥉"];
+  container.innerHTML = staff.map((s, i) => `
+    <div class="perf-row">
+      <span class="perf-rank">${medals[i] || (i + 1)}</span>
+      <span class="perf-name">${esc(s.r.name || s.r.email)}</span>
+      <span class="perf-stat">📝 ${bnNum(s.reportCount)} রিপোর্ট</span>
+      <span class="perf-stat">🏖️ ${bnNum(s.leaveCount)} ছুটি</span>
+    </div>`).join("");
+}
+
+// সতর্কতা: কোনো স্টাফ টানা ৩+ দিন রিপোর্ট না দিলে (ছুটির দিন বাদে) এখানে দেখাবে।
+function renderStaffAlerts(){
+  const container = document.getElementById("staffAlertsList");
+  if (!container) return;
+  const today = new Date();
+  const alerts = [];
+  (DATA.staff.approved || []).forEach(r => {
+    ensureStaffExtras(r);
+    const reportDates = new Set((r.reports || []).map(rp => rp.date));
+    const leaveDates = new Set((r.leaves || []).filter(l => l.status === "approved").map(l => l.date));
+    let streak = 0;
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      if (reportDates.has(dateStr)) break;         // রিপোর্ট পেলেই streak থেমে যাবে
+      if (leaveDates.has(dateStr)) continue;        // অনুমোদিত ছুটি গোনায় ধরা হবে না
+      streak++;
+    }
+    if (streak >= 3) alerts.push({ r, streak });
+  });
+  if (!alerts.length) { container.innerHTML = ""; return; }
+  container.innerHTML = alerts.map(a => `
+    <div class="alert-row">
+      <span>⚠️ <b>${esc(a.r.name || a.r.email)}</b> টানা ${bnNum(a.streak)} দিন কোনো রিপোর্ট দেননি।</span>
+    </div>`).join("");
 }
 
 /* ---------- Staff management: leave requests + one-day report for everyone ---------- */
@@ -1910,9 +2007,16 @@ function renderStaffDaily(){
       body += reports.map(rep => `<div class="day-text">${staffEsc(rep.text)}</div>`).join("");
     }
     if (leave) {
-      const label = leave.status === "approved" ? "ছুটি অনুমোদিত" : leave.status === "rejected" ? "ছুটির আবেদন বাতিল" : "ছুটির আবেদন অপেক্ষমাণ";
-      body += `<div><span class="day-tag tag-leave">🏖️ ${label}</span></div>` +
+      const label =
+        leave.status === "approved" ? "ছুটি অনুমোদিত" :
+        leave.status === "cancelled" ? "অনুমোদিত ছুটি বাতিল হয়েছে" :
+        leave.status === "rejected" ? "ছুটির আবেদন বাতিল" : "ছুটির আবেদন অপেক্ষমাণ";
+      const tagClass = leave.status === "cancelled" ? "tag-none" : "tag-leave";
+      body += `<div><span class="day-tag ${tagClass}">🏖️ ${label}</span></div>` +
               `<div class="day-text">কারণ: ${staffEsc(leave.reason)}</div>`;
+      if (leave.status === "cancelled" && leave.cancelNote) {
+        body += `<div class="day-text">বাতিলের নোট: ${staffEsc(leave.cancelNote)}</div>`;
+      }
     }
     if (state === 2) body += `<div><span class="day-tag tag-none">রিপোর্ট জমা দেননি</span></div>`;
     box.innerHTML = `<div class="day-who"><span>${staffEsc(r.name || r.email)}</span><span class="day-eid">${staffEsc(r.employeeId || "—")}</span></div>${body}`;
@@ -1926,12 +2030,9 @@ document.getElementById("staffDailyToday").addEventListener("click", () => {
   renderStaffDaily();
 });
 
-function renderStaffAttendance(r, monthStr){
-  const box = document.getElementById("staffAttSummary");
-  const monthInput = document.getElementById("staffAttMonth");
-  if (!monthStr) monthStr = monthInput.value || todayISO().slice(0, 7);
-  monthInput.value = monthStr;
-
+// মাসিক হাজিরা/বেতনের হিসাব — admin-এর স্যালারি ক্যালকুলেটর, স্টাফের নিজের ক্যালেন্ডার,
+// আর CSV এক্সপোর্ট — তিন জায়গাতেই এই একই হিসাব পুনর্ব্যবহার হয়।
+function computeStaffMonthStats(r, monthStr){
   const [yy, mm] = monthStr.split("-").map(Number);
   const daysInMonth = new Date(yy, mm, 0).getDate();
   const today = todayISO();
@@ -1940,14 +2041,61 @@ function renderStaffAttendance(r, monthStr){
 
   const reportDates = new Set((r.reports || []).filter(rep => rep.date && rep.date.startsWith(monthStr)).map(rep => rep.date));
   const leaveDates = new Set((r.leaves || []).filter(lv => lv.status === "approved" && lv.date && lv.date.startsWith(monthStr)).map(lv => lv.date));
-  const presentDays = reportDates.size;
-  const leaveDays = leaveDates.size;
-  const absentDays = Math.max(0, daysElapsed - presentDays - leaveDays);
+
+  const days = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = monthStr + "-" + String(d).padStart(2, "0");
+    let status;
+    if (d > daysElapsed) status = "future";
+    else if (reportDates.has(dateStr)) status = "present";
+    else if (leaveDates.has(dateStr)) status = "leave";
+    else status = "absent";
+    days.push({ date: dateStr, dayNum: d, status });
+  }
+
+  const presentDays = days.filter(d => d.status === "present").length;
+  const leaveDays = days.filter(d => d.status === "leave").length;
+  const absentDays = days.filter(d => d.status === "absent").length;
 
   const salary = Number(r.salary) || 0;
   const perDayRate = salary / daysInMonth;
   const deduction = absentDays * perDayRate;
   const payable = Math.max(0, salary - deduction);
+
+  return { daysInMonth, daysElapsed, isCurrentMonth, presentDays, leaveDays, absentDays, salary, deduction, payable, days };
+}
+
+const BN_WEEKDAYS = ["রবি", "সোম", "মঙ্গল", "বুধ", "বৃহ", "শুক্র", "শনি"];
+
+function buildAttendanceCalendarHTML(stats, monthStr){
+  const [yy, mm] = monthStr.split("-").map(Number);
+  const firstDow = new Date(yy, mm - 1, 1).getDay(); // 0=রবি
+  let html = `<div class="att-cal-legend">
+    <span><i style="background:var(--soft)"></i>রিপোর্ট দিয়েছেন</span>
+    <span><i style="background:var(--amber-soft)"></i>অনুমোদিত ছুটি</span>
+    <span><i style="background:#FDE2DA"></i>অনুপস্থিত</span>
+    <span><i style="background:var(--bg);border:1px dashed var(--soft)"></i>আসেনি এখনো</span>
+  </div>`;
+  html += `<div class="att-calendar">`;
+  BN_WEEKDAYS.forEach(w => { html += `<div class="att-cal-head">${w}</div>`; });
+  for (let i = 0; i < firstDow; i++) html += `<div class="att-cal-day blank"></div>`;
+  stats.days.forEach(d => {
+    html += `<div class="att-cal-day ${d.status}" title="${d.date}">${bnNum(d.dayNum)}</div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function bnNum(n){ return String(n).replace(/[0-9]/g, (d) => "০১২৩৪৫৬৭৮৯"[d]); }
+
+function renderStaffAttendance(r, monthStr){
+  const box = document.getElementById("staffAttSummary");
+  const monthInput = document.getElementById("staffAttMonth");
+  if (!monthStr) monthStr = monthInput.value || todayISO().slice(0, 7);
+  monthInput.value = monthStr;
+
+  const stats = computeStaffMonthStats(r, monthStr);
+  const { daysInMonth, isCurrentMonth, daysElapsed, presentDays, leaveDays, absentDays, salary, payable } = stats;
 
   box.innerHTML = `
     <div class="att-card">
@@ -1957,6 +2105,7 @@ function renderStaffAttendance(r, monthStr){
         <div class="att-stat"><span class="att-stat-label">অনুপস্থিত (হিসাবহীন)</span><span class="att-stat-value${absentDays > 0 ? " warn" : ""}">${absentDays} দিন</span></div>
         <div class="att-stat"><span class="att-stat-label">মাসিক বেতন</span><span class="att-stat-value">${salary ? "৳" + salary.toLocaleString("bn-BD") : "নির্ধারিত নয়"}</span></div>
       </div>
+      ${buildAttendanceCalendarHTML(stats, monthStr)}
       <div class="att-payable">
         <span class="att-payable-label">প্রদেয় বেতন (অনুপস্থিতি বাদ দিয়ে)</span>
         <span class="att-payable-value">৳${Math.round(payable).toLocaleString("bn-BD")}</span>
@@ -1965,8 +2114,54 @@ function renderStaffAttendance(r, monthStr){
         হিসাব: প্রতিদিনের হার = মাসিক বেতন ÷ ${daysInMonth} দিন। ${isCurrentMonth ? "চলতি মাসের " + daysElapsed + " দিন পর্যন্ত" : "পুরো মাস"} হিসাব করা হয়েছে।
         ${salary ? "" : " বেতন এখনো ঠিক করা হয়নি — স্টাফ তালিকায় 'বেতন' বাটনে চেপে দিন।"}
       </div>
-    </div>`;
+      <button type="button" class="att-pay-btn" id="markPaidBtn">💵 এই মাসের বেতন পরিশোধ হিসেবে মার্ক করুন</button>
+    </div>
+    <h3 style="font-size:14px;margin:18px 0 8px;">বেতন পরিশোধের ইতিহাস</h3>
+    <div id="staffPaymentsBox"></div>`;
+
+  document.getElementById("markPaidBtn").addEventListener("click", () => recordStaffPayment(r, monthStr, stats));
+  renderPaymentHistory(document.getElementById("staffPaymentsBox"), r);
 }
+
+// বেতন পরিশোধের লগ — কবে কাকে কত দেওয়া হলো, কত কাটা হলো, সেটা স্থায়ীভাবে রেখে দেয়।
+function recordStaffPayment(r, monthStr, stats){
+  showLogin({
+    icon: "💵",
+    title: "বেতন পরিশোধ নিশ্চিত করুন",
+    sub: (r.name || r.email) + " — " + monthStr + " মাসের জন্য ৳" + Math.round(stats.payable).toLocaleString("bn-BD") + " পরিশোধ হিসেবে সেভ করা হবে।",
+    tabs: [{
+      submit: "নিশ্চিত করুন",
+      fields: [{ name: "note", label: "নোট (ঐচ্ছিক)", type: "text", placeholder: "যেমন: বিকাশে পাঠানো হয়েছে" }],
+      onSubmit: (v) => {
+        if (!r.payments) r.payments = [];
+        r.payments.push({
+          id: makeId(), month: monthStr,
+          amount: Math.round(stats.payable), deduction: Math.round(stats.deduction),
+          paidAt: todayISO(), note: (v.note || "").trim()
+        });
+        saveState();
+        renderPaymentHistory(document.getElementById("staffPaymentsBox"), r);
+        renderStaffLists();
+        return { success: "বেতন পরিশোধের রেকর্ড সেভ হয়েছে।" };
+      }
+    }]
+  });
+}
+
+function renderPaymentHistory(container, r, readOnly){
+  if (!container) return;
+  const payments = (r.payments || []).slice().reverse();
+  if (!payments.length) {
+    container.innerHTML = `<div class="empty">এখনো কোনো বেতন পরিশোধের রেকর্ড নেই।</div>`;
+    return;
+  }
+  container.innerHTML = payments.map(p => `
+    <div class="pay-row">
+      <div><b>${p.month}</b> ${p.note ? "— " + esc(p.note) : ""}<div class="pay-meta">পরিশোধের তারিখ: ${p.paidAt}${p.deduction ? " · কাটা হয়েছে ৳" + p.deduction.toLocaleString("bn-BD") : ""}</div></div>
+      <div class="pay-amt">৳${p.amount.toLocaleString("bn-BD")}</div>
+    </div>`).join("");
+}
+function esc(t){ return String(t||"").replace(/</g,"&lt;"); }
 
 function setStaffContact(id){
   const r = (DATA.staff.approved || []).find(r=>r.id===id);
@@ -2070,31 +2265,65 @@ function renderStaffDetailModal(dateFilterValue){
     leaves.forEach(lv=>{
       const box = document.createElement("div");
       box.className = "leave-box";
+      const esc = (t) => String(t||"").replace(/</g,"&lt;");
       if (lv.status === "pending") {
         box.innerHTML = `<div class="leave-date">📅 ${lv.date}</div>
-          <div class="leave-reason">কারণ: ${(lv.reason||"").replace(/</g,"&lt;")}</div>
+          <div class="leave-reason">কারণ: ${esc(lv.reason)}</div>
           <div class="leave-actions">
             <button class="leave-approve" data-lid="${lv.id}">✅ অনুমোদন</button>
             <button class="leave-reject" data-lid="${lv.id}">❌ বাতিল</button>
           </div>`;
+      } else if (lv.status === "approved") {
+        box.innerHTML = `<div class="leave-date">📅 ${lv.date} <span class="leave-status">— ✅ অনুমোদিত</span></div>
+          <div class="leave-reason">কারণ: ${esc(lv.reason)}</div>
+          <div class="leave-actions">
+            <button class="leave-cancel" data-lid="${lv.id}">⚠️ বিশেষ পরিস্থিতিতে বাতিল করুন</button>
+          </div>`;
+      } else if (lv.status === "cancelled") {
+        box.innerHTML = `<div class="leave-date">📅 ${lv.date} <span class="leave-status cancelled">— ⚠️ অনুমোদনের পর বাতিল হয়েছে</span></div>
+          <div class="leave-reason">আবেদনের কারণ: ${esc(lv.reason)}</div>
+          <div class="leave-cancel-note">বাতিলের নোট (${esc(lv.cancelledAt)}): ${esc(lv.cancelNote)}</div>`;
       } else {
-        const label = lv.status === "approved" ? "✅ অনুমোদিত" : "❌ বাতিল করা হয়েছে";
-        box.innerHTML = `<div class="leave-date">📅 ${lv.date} <span class="leave-status">— ${label}</span></div>
-          <div class="leave-reason">কারণ: ${(lv.reason||"").replace(/</g,"&lt;")}</div>`;
+        box.innerHTML = `<div class="leave-date">📅 ${lv.date} <span class="leave-status">— ❌ বাতিল করা হয়েছে</span></div>
+          <div class="leave-reason">কারণ: ${esc(lv.reason)}</div>`;
       }
       leavesEl.appendChild(box);
     });
     leavesEl.querySelectorAll(".leave-approve").forEach(b=> b.onclick = () => decideLeave(r.id, b.dataset.lid, "approved"));
     leavesEl.querySelectorAll(".leave-reject").forEach(b=> b.onclick = () => decideLeave(r.id, b.dataset.lid, "rejected"));
+    leavesEl.querySelectorAll(".leave-cancel").forEach(b=> b.onclick = () => promptCancelLeave(r.id, b.dataset.lid));
   }
 }
 
-function decideLeave(staffId, leaveId, decision){
+// অনুমোদিত ছুটি বিশেষ পরিস্থিতিতে বাতিল করার জন্য — কারণ/নোট ছাড়া বাতিল করা যায় না।
+function promptCancelLeave(staffId, leaveId){
+  showLogin({
+    icon: "⚠️",
+    title: "অনুমোদিত ছুটি বাতিল করুন",
+    sub: "বিশেষ পরিস্থিতিতে আগে অনুমোদিত ছুটি বাতিল করতে চাইলে কারণ লিখুন — এই নোটটা স্টাফ ও ভবিষ্যতের রেকর্ডে থেকে যাবে।",
+    tabs: [{
+      submit: "বাতিল নিশ্চিত করুন",
+      fields: [{ name: "note", label: "বাতিলের কারণ", type: "text", placeholder: "যেমন: জরুরি কাজের চাপে ছুটি বাতিল করা হলো" }],
+      onSubmit: (v) => {
+        const note = (v.note || "").trim();
+        if (!note) return { error: "বাতিলের কারণ/নোট ছাড়া অনুমোদিত ছুটি বাতিল করা যাবে না।" };
+        decideLeave(staffId, leaveId, "cancelled", note);
+        return { success: "ছুটিটা বাতিল করা হয়েছে, নোটটাও সেভ হয়েছে।" };
+      }
+    }]
+  });
+}
+
+function decideLeave(staffId, leaveId, decision, note){
   const r = (DATA.staff.approved || []).find(r=>r.id===staffId);
   if (!r) return;
   const lv = (r.leaves||[]).find(l=>l.id===leaveId);
   if (!lv) return;
   lv.status = decision;
+  if (decision === "cancelled") {
+    lv.cancelNote = note || "";
+    lv.cancelledAt = todayISO();
+  }
   saveState();
   renderStaffDetailModal();
   renderStaffLists();
@@ -2739,10 +2968,14 @@ function renderMyWork(){
   const leaves = (rec.leaves || []).slice().reverse();
   if (!leaves.length) { leavesEl.innerHTML = `<div class="empty">কোনো ছুটির আবেদন নেই।</div>`; }
   else leaves.forEach(lv=>{
-    const label = lv.status === "pending" ? "⏳ অপেক্ষমাণ" : lv.status === "approved" ? "✅ অনুমোদিত" : "❌ বাতিল";
+    const label =
+      lv.status === "pending" ? "⏳ অপেক্ষমাণ" :
+      lv.status === "approved" ? "✅ অনুমোদিত" :
+      lv.status === "cancelled" ? "⚠️ অনুমোদনের পর বাতিল হয়েছে" : "❌ বাতিল";
     const d = document.createElement("div");
     d.className = "req-row";
-    d.innerHTML = `<div class="req-info"><b>${lv.date} — ${label}</b><span>${lv.reason}</span></div>`;
+    const noteLine = (lv.status === "cancelled" && lv.cancelNote) ? ` · বাতিলের কারণ: ${lv.cancelNote}` : "";
+    d.innerHTML = `<div class="req-info"><b>${lv.date} — ${label}</b><span>${lv.reason}${noteLine}</span></div>`;
     leavesEl.appendChild(d);
   });
 }
