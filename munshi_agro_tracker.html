@@ -1954,6 +1954,19 @@ function renderPendingLeaves(){
     wrap.innerHTML = `<div class="empty">কোনো অপেক্ষমাণ ছুটির অনুরোধ নেই।</div>`;
     return;
   }
+  if (rows.length > 1) {
+    const bulkBtn = document.createElement("button");
+    bulkBtn.className = "day-today-btn";
+    bulkBtn.style.marginBottom = "10px";
+    bulkBtn.textContent = "✅ সব (" + bnNum(rows.length) + "টা) একসাথে অনুমোদন করুন";
+    bulkBtn.addEventListener("click", () => {
+      showConfirmDialog("অপেক্ষমাণ " + rows.length + "টা ছুটির আবেদনই একসাথে অনুমোদন করতে চান?", () => {
+        rows.forEach(({ staff, lv }) => decideLeave(staff.id, lv.id, "approved"));
+        showToast("সবগুলো ছুটির আবেদন অনুমোদন করা হয়েছে।", "success");
+      });
+    });
+    wrap.appendChild(bulkBtn);
+  }
   rows.forEach(({ staff, lv }) => {
     const box = document.createElement("div");
     box.className = "leave-box";
@@ -2954,6 +2967,14 @@ function renderMyWork(){
   const leaveDateInput = document.getElementById("leaveDateInput");
   if (!leaveDateInput.value) leaveDateInput.value = today;
 
+  const calEl = document.getElementById("myAttendanceCalendar");
+  if (calEl) {
+    const monthStr = today.slice(0, 7);
+    calEl.innerHTML = buildAttendanceCalendarHTML(computeStaffMonthStats(rec, monthStr), monthStr);
+  }
+  const payEl = document.getElementById("myPaymentsList");
+  if (payEl) renderPaymentHistory(payEl, rec);
+
   repsEl.innerHTML = "";
   const reps = (rec.reports || []).slice(-8).reverse();
   if (!reps.length) { repsEl.innerHTML = `<div class="empty">এখনো কোনো রিপোর্ট জমা দেননি।</div>`; }
@@ -3438,6 +3459,36 @@ function exportEntriesCsv(){
 }
 
 document.getElementById("exportCsvBtn").addEventListener("click", exportEntriesCsv);
+
+function exportStaffPayrollCsv(){
+  const staff = DATA.staff.approved || [];
+  if (!staff.length) { showToast("কোনো স্টাফ নেই, এক্সপোর্ট করার কিছু নেই।", "error"); return; }
+  const monthInput = document.getElementById("staffDailyDate");
+  const monthStr = (monthInput && monthInput.value ? monthInput.value : todayISO()).slice(0, 7);
+
+  const csvEscape = (val) => {
+    const s = String(val == null ? "" : val);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const header = ["নাম", "Employee ID", "মাস", "রিপোর্ট দিয়েছেন (দিন)", "অনুমোদিত ছুটি (দিন)", "অনুপস্থিত (দিন)", "মাসিক বেতন", "কর্তন", "প্রদেয় বেতন"];
+  const rows = staff.map(r => {
+    ensureStaffExtras(r);
+    const s = computeStaffMonthStats(r, monthStr);
+    return [r.name || "", r.employeeId || "", monthStr, s.presentDays, s.leaveDays, s.absentDays, Math.round(s.salary), Math.round(s.deduction), Math.round(s.payable)];
+  });
+  const csv = "\uFEFF" + [header, ...rows].map(row => row.map(csvEscape).join(",")).join("\r\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `munshi-agro-payroll-${monthStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+document.getElementById("exportStaffCsvBtn").addEventListener("click", exportStaffPayrollCsv);
 
 /* init */
 function startApp(){
