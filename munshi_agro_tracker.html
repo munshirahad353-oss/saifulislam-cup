@@ -1112,6 +1112,13 @@ if (FIREBASE_ENABLED) {
     firebase.initializeApp(FIREBASE_CONFIG);
     cloudDocRef = firebase.firestore().collection("munshiAgro").doc("shared");
     authInstance = firebase.auth();
+    // প্রতিটা ভিজিটরকে (পাবলিক/স্টাফ/ইনভেস্টর) নিঃশব্দে একটা anonymous সেশন দেওয়া হয়,
+    // যাতে Firestore-এর "write: if request.auth != null" rule মেনেও তাদের স্বাভাবিক
+    // সেভ (রিপোর্ট, ছুটির আবেদন, ইনভেস্ট ফর্ম) আগের মতোই কাজ করে। অ্যাডমিন ইমেইল-পাসওয়ার্ড
+    // দিয়ে লগইন করলে এই anonymous সেশনের জায়গায় তার আসল অ্যাকাউন্ট বসে যায়।
+    authInstance.onAuthStateChanged((user) => {
+      if (!user) authInstance.signInAnonymously().catch(() => {});
+    });
   } catch (err) {
     console.error("Firebase init failed", err);
     cloudDocRef = null;
@@ -3169,7 +3176,7 @@ document.getElementById("adminBtn").addEventListener("click", () => {
 
 if (FIREBASE_ENABLED && authInstance) {
   authInstance.onAuthStateChanged((user) => {
-    isAdmin = !!user;
+    isAdmin = !!(user && !user.isAnonymous);
     if (isAdmin) {
       isStaff = false;
       localStorage.setItem("munshiIsStaff", "false");
