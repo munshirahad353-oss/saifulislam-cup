@@ -399,6 +399,14 @@
   .att-payable-label { font-size: 13.5px; color: var(--muted); }
   .att-payable-value { font-size: 20px; font-weight: 700; color: var(--green); }
   .att-note { font-size: 11.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+  .tmpl-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .tmpl-chip {
+    border: 1.5px solid var(--soft); background: var(--bg); color: var(--text);
+    border-radius: 999px; padding: 8px 14px; font-family: inherit; font-size: 13px;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.15s, border-color 0.15s;
+  }
+  .tmpl-chip:hover { border-color: var(--mid); }
+  .tmpl-chip.selected { background: var(--mid); border-color: var(--mid); color: var(--white); }
   .att-pay-btn { margin-top: 12px; border: none; border-radius: 10px; padding: 9px 16px; background: var(--green); color: var(--white); font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; }
   .att-pay-btn:hover { opacity: 0.92; }
   /* attendance calendar */
@@ -802,7 +810,9 @@
     <div id="myPaymentsList" style="margin-bottom:20px;"></div>
 
     <h3 style="font-size:15px; margin:6px 0 8px;">আজকের কাজের রিপোর্ট</h3>
-    <textarea id="dailyReportInput" rows="3" placeholder="আজ কী কী কাজ করলেন সংক্ষেপে লিখুন..."
+    <p class="view-note" style="margin-bottom:10px;">যে কাজ করেছেন তাতে ট্যাপ করুন (একাধিক বাছা যায়), চাইলে নিচে বাড়তি বিবরণও লিখুন।</p>
+    <div id="reportTemplateChips" class="tmpl-chips"></div>
+    <textarea id="dailyReportInput" rows="2" placeholder="বাড়তি বিবরণ (ঐচ্ছিক)..."
       style="width:100%; padding:10px 12px; border-radius:10px; border:1.5px solid var(--soft); font-family:inherit; font-size:15px; background:var(--bg); color:var(--text); margin-bottom:10px;"></textarea>
     <button type="button" id="submitReportBtn" class="btn" style="margin-bottom:20px;">রিপোর্ট জমা দিন</button>
 
@@ -2967,6 +2977,32 @@ function currentStaffRecord(){
   return (DATA.staff.approved || []).find(r => r.email === staffEmail) || null;
 }
 
+// স্টাফের দ্রুত রিপোর্ট দেওয়ার জন্য প্রি-সেট কাজের তালিকা — প্রতিদিন টাইপ না করে ট্যাপ করেই রিপোর্ট দেওয়া যায়।
+const REPORT_TEMPLATES = [
+  "💧 পানি দেওয়া", "🌱 সার দেওয়া", "🌾 ফসল কাটা", "🚜 জমি চাষ",
+  "🐄 পশু দেখাশোনা", "🐟 মাছ চাষ পরিচর্যা", "🐔 পোল্ট্রি দেখাশোনা",
+  "🧹 পরিষ্কার করা", "🔧 মেরামত", "🛒 বাজার/ক্রয়"
+];
+let selectedReportTemplates = new Set();
+
+function renderReportTemplateChips(){
+  const wrap = document.getElementById("reportTemplateChips");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  REPORT_TEMPLATES.forEach(label => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "tmpl-chip" + (selectedReportTemplates.has(label) ? " selected" : "");
+    chip.textContent = label;
+    chip.addEventListener("click", () => {
+      if (selectedReportTemplates.has(label)) selectedReportTemplates.delete(label);
+      else selectedReportTemplates.add(label);
+      renderReportTemplateChips();
+    });
+    wrap.appendChild(chip);
+  });
+}
+
 function renderMyWork(){
   const rec = currentStaffRecord();
   const statusEl = document.getElementById("attendanceStatus");
@@ -2989,6 +3025,8 @@ function renderMyWork(){
   }
   const payEl = document.getElementById("myPaymentsList");
   if (payEl) renderPaymentHistory(payEl, rec);
+
+  renderReportTemplateChips();
 
   repsEl.innerHTML = "";
   const reps = (rec.reports || []).slice(-8).reverse();
@@ -3029,12 +3067,18 @@ document.getElementById("submitReportBtn").addEventListener("click", () => {
   const rec = currentStaffRecord();
   if (!rec) return;
   const textEl = document.getElementById("dailyReportInput");
-  const text = textEl.value.trim();
-  if (!text) { showFormError(document.getElementById("submitReportBtn"), "রিপোর্ট লিখুন।"); return; }
+  const detail = textEl.value.trim();
+  const chosen = Array.from(selectedReportTemplates).map(label => label.replace(/^\S+\s/, "")); // ইমোজি বাদ দিয়ে শুধু লেখাটা
+  if (!chosen.length && !detail) {
+    showFormError(document.getElementById("submitReportBtn"), "অন্তত একটা কাজ বেছে নিন অথবা বিবরণ লিখুন।");
+    return;
+  }
+  const text = (chosen.length ? "কাজ: " + chosen.join(", ") : "") + (chosen.length && detail ? "\n" : "") + detail;
   ensureStaffExtras(rec);
   rec.reports.push({ id: makeId(), date: todayISO(), text });
   saveState();
   textEl.value = "";
+  selectedReportTemplates = new Set();
   renderMyWork();
 });
 
