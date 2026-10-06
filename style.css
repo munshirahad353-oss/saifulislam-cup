@@ -981,49 +981,20 @@ a:focus-visible, button:focus-visible {
   font-size: 14px;
   margin: 0 0 26px;
 }
-.glance-kpis {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-bottom: 28px;
-}
-.glance-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 4px;
-  background: var(--white);
-  border: 1px solid var(--husk-deep);
-  border-radius: 16px;
-  padding: 20px 10px;
-  box-shadow: 0 8px 20px rgba(27, 67, 50, 0.06);
-}
-.glance-icon { font-size: 24px; margin-bottom: 2px; }
-.glance-value {
-  font-family: var(--serif);
-  font-size: 21px;
-  font-weight: 700;
-  color: var(--soil);
-  line-height: 1.2;
-}
-.glance-value.is-negative { color: var(--harvest-deep); }
-.glance-label { font-size: 12.5px; color: var(--ink-soft); line-height: 1.4; }
-
 .glance-row2 {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  grid-template-columns: 1fr 1.3fr;
   gap: 18px;
-  margin-bottom: 10px;
+  margin-bottom: 18px;
 }
-.glance-chart-card, .glance-activity-card {
+.glance-chart-card {
   background: var(--white);
   border: 1px solid var(--husk-deep);
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 8px 20px rgba(27, 67, 50, 0.06);
 }
-.glance-chart-card h3, .glance-activity-card h3 {
+.glance-chart-card h3 {
   font-family: var(--serif);
   font-size: 16px;
   color: var(--soil);
@@ -1049,23 +1020,37 @@ a:focus-visible, button:focus-visible {
 .dot-income { background: var(--paddy); }
 .dot-expense { background: var(--harvest); }
 
-.glance-activity { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
-.glance-activity li {
-  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
-  font-size: 13.5px; padding-bottom: 11px; border-bottom: 1px dashed var(--husk-deep);
+/* ---------- trend bars (income/expense/profit growth %) ---------- */
+.trend-bars { display: flex; flex-direction: column; gap: 16px; justify-content: center; height: 170px; }
+.trend-row { display: flex; align-items: center; gap: 10px; }
+.trend-label { width: 64px; flex-shrink: 0; font-size: 13px; color: var(--ink-soft); }
+.trend-track { flex: 1; height: 10px; background: var(--husk-deep); border-radius: 999px; overflow: hidden; position: relative; }
+.trend-fill { height: 100%; border-radius: 999px; width: 0%; transition: width 0.7s ease; }
+.trend-fill.positive { background: linear-gradient(90deg, var(--paddy), var(--soil-soft)); }
+.trend-fill.negative { background: linear-gradient(90deg, var(--harvest), var(--harvest-deep)); }
+.trend-value { width: 56px; flex-shrink: 0; text-align: right; font-weight: 700; font-size: 13.5px; color: var(--soil); }
+.trend-value.is-negative { color: var(--harvest-deep); }
+
+.glance-investors-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--white);
+  border: 1px solid var(--husk-deep);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 20px rgba(27, 67, 50, 0.06);
 }
-.glance-activity li:last-child { border-bottom: none; padding-bottom: 0; }
-.glance-activity .ga-cat { color: var(--ink); }
-.glance-activity .ga-amt { font-weight: 700; white-space: nowrap; }
-.glance-activity .ga-amt.income { color: var(--paddy-deep); }
-.glance-activity .ga-amt.expense { color: var(--harvest-deep); }
+.glance-investors-strip .glance-icon { font-size: 22px; }
+.glance-investors-strip .glance-value { font-family: var(--serif); font-size: 22px; font-weight: 700; color: var(--soil); }
+.glance-investors-strip .glance-label { font-size: 13px; color: var(--ink-soft); }
 
 @media (max-width: 900px) {
-  .glance-kpis { grid-template-columns: repeat(2, 1fr); }
   .glance-row2 { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .glance-bar { transition: none; }
+  .glance-bar, .trend-fill { transition: none; }
 }
 
 /* ---------- section divider (paddy row motif) ---------- */

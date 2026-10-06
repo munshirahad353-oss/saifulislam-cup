@@ -326,37 +326,49 @@
       });
     }
 
-    function renderActivity(entries) {
-      var listEl = document.getElementById("glanceActivity");
-      if (!entries || !entries.length) {
-        listEl.innerHTML = '<li class="glance-loading">এখনো কোনো এন্ট্রি নেই।</li>';
-        return;
-      }
-      listEl.innerHTML = "";
-      entries.forEach(function (e) {
-        var li = document.createElement("li");
-        var catSpan = document.createElement("span");
-        catSpan.className = "ga-cat";
-        catSpan.textContent = e.category + (e.date ? " · " + e.date : e.year ? " · " + e.year + " বছর" : "");
-        var tagSpan = document.createElement("span");
-        tagSpan.className = "ga-amt " + e.type;
-        tagSpan.textContent = e.type === "income" ? "আয়" : "খরচ";
-        li.appendChild(catSpan);
-        li.appendChild(tagSpan);
-        listEl.appendChild(li);
+    function renderTrendBars(sum) {
+      var wrap = document.getElementById("trendBars");
+      if (!wrap) return;
+      var rows = [
+        { label: "আয়", pct: sum.incomeGrowthPct },
+        { label: "খরচ", pct: sum.expenseGrowthPct },
+        { label: "মুনাফা", pct: sum.profitGrowthPct }
+      ];
+      var maxAbs = 1;
+      rows.forEach(function (r) { if (r.pct != null) maxAbs = Math.max(maxAbs, Math.abs(r.pct)); });
+      wrap.innerHTML = "";
+      rows.forEach(function (r) {
+        var row = document.createElement("div");
+        row.className = "trend-row";
+        var label = document.createElement("span");
+        label.className = "trend-label";
+        label.textContent = r.label;
+        var track = document.createElement("div");
+        track.className = "trend-track";
+        var fill = document.createElement("div");
+        var isNeg = r.pct != null && r.pct < 0;
+        fill.className = "trend-fill " + (isNeg ? "negative" : "positive");
+        fill.style.width = "0%";
+        track.appendChild(fill);
+        var val = document.createElement("span");
+        val.className = "trend-value" + (isNeg ? " is-negative" : "");
+        val.textContent = fmtPct(r.pct);
+        row.appendChild(label);
+        row.appendChild(track);
+        row.appendChild(val);
+        wrap.appendChild(row);
+        requestAnimationFrame(function () {
+          var w = r.pct == null ? 0 : Math.min(100, (Math.abs(r.pct) / maxAbs) * 100);
+          fill.style.width = w + "%";
+        });
       });
     }
 
     function applySummary(sum) {
       if (!sum) return;
-      document.getElementById("kpiIncome").textContent = fmtPct(sum.incomeGrowthPct);
-      document.getElementById("kpiExpense").textContent = fmtPct(sum.expenseGrowthPct);
-      var profitEl = document.getElementById("kpiProfit");
-      profitEl.textContent = fmtPct(sum.profitGrowthPct);
-      profitEl.classList.toggle("is-negative", sum.profitGrowthPct != null && sum.profitGrowthPct < 0);
       animateCount(document.getElementById("kpiInvestors"), sum.investorsCount || 0);
+      renderTrendBars(sum);
       renderChart(sum.yearlyTrend);
-      renderActivity(sum.recentActivity);
       if (sub) sub.textContent = "লাইভ ট্র্যাকার থেকে সরাসরি হালনাগাদ তথ্য (নির্দিষ্ট টাকার অঙ্ক শুধু ইনভেস্টর লগইনে দেখা যাবে)";
     }
 

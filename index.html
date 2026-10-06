@@ -181,39 +181,22 @@
       <h2 class="glance-title">এক নজরে</h2>
       <p class="glance-sub" id="glanceSub">লাইভ ট্র্যাকার থেকে সরাসরি হালনাগাদ তথ্য</p>
 
-      <div class="glance-kpis" id="glanceKpis">
-        <div class="glance-card">
-          <span class="glance-icon">📈</span>
-          <span class="glance-value" id="kpiIncome">—</span>
-          <span class="glance-label">আয়ের প্রবণতা (গত বছরের তুলনায়)</span>
-        </div>
-        <div class="glance-card">
-          <span class="glance-icon">📉</span>
-          <span class="glance-value" id="kpiExpense">—</span>
-          <span class="glance-label">খরচের প্রবণতা (গত বছরের তুলনায়)</span>
-        </div>
-        <div class="glance-card">
-          <span class="glance-icon">💰</span>
-          <span class="glance-value" id="kpiProfit">—</span>
-          <span class="glance-label">মুনাফার প্রবণতা (গত বছরের তুলনায়)</span>
-        </div>
-        <div class="glance-card">
-          <span class="glance-icon">🤝</span>
-          <span class="glance-value" id="kpiInvestors" data-target="0">০</span>
-          <span class="glance-label">ইনভেস্টর</span>
-        </div>
-      </div>
-
       <div class="glance-row2">
+        <div class="glance-chart-card">
+          <h3>প্রবণতা (গত বছরের তুলনায়)</h3>
+          <div class="trend-bars" id="trendBars"><div class="glance-loading">লোড হচ্ছে…</div></div>
+        </div>
         <div class="glance-chart-card">
           <h3>বছরভিত্তিক আয়–ব্যয়</h3>
           <div class="glance-chart" id="glanceChart"><div class="glance-loading">লোড হচ্ছে…</div></div>
           <div class="glance-legend"><span class="dot dot-income"></span> আয় &nbsp; <span class="dot dot-expense"></span> খরচ</div>
         </div>
-        <div class="glance-activity-card">
-          <h3>সাম্প্রতিক এন্ট্রি</h3>
-          <ul class="glance-activity" id="glanceActivity"><li class="glance-loading">লোড হচ্ছে…</li></ul>
-        </div>
+      </div>
+
+      <div class="glance-investors-strip">
+        <span class="glance-icon">🤝</span>
+        <span class="glance-value" id="kpiInvestors" data-target="0">০</span>
+        <span class="glance-label">ইনভেস্টর</span>
       </div>
     </div>
   </section>
