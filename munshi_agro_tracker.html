@@ -405,9 +405,12 @@
   .att-cal-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); margin: 14px 0 8px; }
   .att-cal-legend span { display: inline-flex; align-items: center; gap: 5px; }
   .att-cal-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-  .att-calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
-  .att-cal-head { font-size: 10.5px; text-align: center; color: var(--muted); font-weight: 700; padding-bottom: 2px; }
-  .att-cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 12px; font-weight: 700; }
+  .att-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 40px)); gap: 4px; margin-bottom: 6px; max-width: 320px; justify-content: start; }
+  .att-cal-head { font-size: 10px; text-align: center; color: var(--muted); font-weight: 700; padding-bottom: 2px; }
+  .att-cal-day { aspect-ratio: 1; width: 100%; display: flex; align-items: center; justify-content: center; border-radius: 7px; font-size: 11px; font-weight: 700; }
+  @media (max-width: 480px) {
+    .att-calendar { grid-template-columns: repeat(7, 1fr); max-width: 100%; }
+  }
   .att-cal-day.blank { visibility: hidden; }
   .att-cal-day.present { background: var(--soft); color: var(--dark); }
   .att-cal-day.leave { background: var(--amber-soft); color: var(--brown); }
@@ -2059,7 +2062,12 @@ function computeStaffMonthStats(r, monthStr){
   const isCurrentMonth = monthStr === today.slice(0, 7);
   const daysElapsed = isCurrentMonth ? Number(today.slice(8, 10)) : daysInMonth;
 
+  // "উপস্থিত" ধরা হয় হয় হাজিরা বাটনে চাপলে (attendance), নয়তো সেদিনের কাজের
+  // রিপোর্ট জমা দিলে (reports) — দুটোর যেকোনো একটা হলেই present, দুটোই লাগবে না।
   const reportDates = new Set((r.reports || []).filter(rep => rep.date && rep.date.startsWith(monthStr)).map(rep => rep.date));
+  const attendanceDates = new Set(
+    Object.keys(r.attendance || {}).filter(d => d.startsWith(monthStr) && r.attendance[d] === "present")
+  );
   const leaveDates = new Set((r.leaves || []).filter(lv => lv.status === "approved" && lv.date && lv.date.startsWith(monthStr)).map(lv => lv.date));
 
   const days = [];
@@ -2067,7 +2075,7 @@ function computeStaffMonthStats(r, monthStr){
     const dateStr = monthStr + "-" + String(d).padStart(2, "0");
     let status;
     if (d > daysElapsed) status = "future";
-    else if (reportDates.has(dateStr)) status = "present";
+    else if (reportDates.has(dateStr) || attendanceDates.has(dateStr)) status = "present";
     else if (leaveDates.has(dateStr)) status = "leave";
     else status = "absent";
     days.push({ date: dateStr, dayNum: d, status });
@@ -2091,7 +2099,7 @@ function buildAttendanceCalendarHTML(stats, monthStr){
   const [yy, mm] = monthStr.split("-").map(Number);
   const firstDow = new Date(yy, mm - 1, 1).getDay(); // 0=রবি
   let html = `<div class="att-cal-legend">
-    <span><i style="background:var(--soft)"></i>রিপোর্ট দিয়েছেন</span>
+    <span><i style="background:var(--soft)"></i>উপস্থিত (হাজিরা/রিপোর্ট)</span>
     <span><i style="background:var(--amber-soft)"></i>অনুমোদিত ছুটি</span>
     <span><i style="background:#FDE2DA"></i>অনুপস্থিত</span>
     <span><i style="background:var(--bg);border:1px dashed var(--soft)"></i>আসেনি এখনো</span>
@@ -2120,7 +2128,7 @@ function renderStaffAttendance(r, monthStr){
   box.innerHTML = `
     <div class="att-card">
       <div class="att-grid">
-        <div class="att-stat"><span class="att-stat-label">রিপোর্ট দিয়েছেন</span><span class="att-stat-value">${presentDays} দিন</span></div>
+        <div class="att-stat"><span class="att-stat-label">উপস্থিত ছিলেন</span><span class="att-stat-value">${presentDays} দিন</span></div>
         <div class="att-stat"><span class="att-stat-label">অনুমোদিত ছুটি</span><span class="att-stat-value">${leaveDays} দিন</span></div>
         <div class="att-stat"><span class="att-stat-label">অনুপস্থিত (হিসাবহীন)</span><span class="att-stat-value${absentDays > 0 ? " warn" : ""}">${absentDays} দিন</span></div>
         <div class="att-stat"><span class="att-stat-label">মাসিক বেতন</span><span class="att-stat-value">${salary ? "৳" + salary.toLocaleString("bn-BD") : "নির্ধারিত নয়"}</span></div>
@@ -3477,7 +3485,7 @@ function exportStaffPayrollCsv(){
     const s = String(val == null ? "" : val);
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
-  const header = ["নাম", "Employee ID", "মাস", "রিপোর্ট দিয়েছেন (দিন)", "অনুমোদিত ছুটি (দিন)", "অনুপস্থিত (দিন)", "মাসিক বেতন", "কর্তন", "প্রদেয় বেতন"];
+  const header = ["নাম", "Employee ID", "মাস", "উপস্থিত (দিন)", "অনুমোদিত ছুটি (দিন)", "অনুপস্থিত (দিন)", "মাসিক বেতন", "কর্তন", "প্রদেয় বেতন"];
   const rows = staff.map(r => {
     ensureStaffExtras(r);
     const s = computeStaffMonthStats(r, monthStr);
