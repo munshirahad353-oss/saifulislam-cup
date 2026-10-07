@@ -420,9 +420,9 @@
     .att-calendar { grid-template-columns: repeat(7, 1fr); max-width: 100%; }
   }
   .att-cal-day.blank { visibility: hidden; }
-  .att-cal-day.present { background: var(--soft); color: var(--dark); }
-  .att-cal-day.leave { background: var(--amber-soft); color: var(--brown); }
-  .att-cal-day.absent { background: #FDE2DA; color: var(--red); }
+  .att-cal-day.present { background: var(--green); color: var(--white); }
+  .att-cal-day.leave { background: var(--brown); color: var(--white); }
+  .att-cal-day.absent { background: var(--red); color: var(--white); }
   .att-cal-day.future { background: var(--bg); color: var(--muted); border: 1px dashed var(--soft); }
   /* payment history */
   .pay-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; border-bottom: 1px dashed var(--soft); padding: 9px 0; font-size: 13.5px; flex-wrap: wrap; }
@@ -2121,9 +2121,9 @@ function buildAttendanceCalendarHTML(stats, monthStr){
   const [yy, mm] = monthStr.split("-").map(Number);
   const firstDow = new Date(yy, mm - 1, 1).getDay(); // 0=রবি
   let html = `<div class="att-cal-legend">
-    <span><i style="background:var(--soft)"></i>উপস্থিত (হাজিরা/রিপোর্ট)</span>
-    <span><i style="background:var(--amber-soft)"></i>অনুমোদিত ছুটি</span>
-    <span><i style="background:#FDE2DA"></i>অনুপস্থিত</span>
+    <span><i style="background:var(--green)"></i>উপস্থিত (হাজিরা/রিপোর্ট)</span>
+    <span><i style="background:var(--brown)"></i>অনুমোদিত ছুটি</span>
+    <span><i style="background:var(--red)"></i>অনুপস্থিত</span>
     <span><i style="background:var(--bg);border:1px dashed var(--soft)"></i>আসেনি এখনো</span>
   </div>`;
   html += `<div class="att-calendar">`;
