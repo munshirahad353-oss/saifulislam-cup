@@ -875,7 +875,19 @@
 
   <div class="card section-panel admin-hidden" id="manageCard" data-panel-id="panelManage">
     <h2>এডমিন ম্যানেজ</h2>
-    <h3 style="font-size:15px;margin:0 0 8px;">PDF ব্যবস্থাপনা</h3>
+
+    <h3 style="font-size:15px;margin:0 0 8px;">💾 ডেটা ব্যাকআপ ও রিস্টোর</h3>
+    <p class="view-note">সব এন্ট্রি, ইনভেস্টর, স্টাফ, রিপোর্ট — সব ডেটার একটা কপি ফাইলে নামিয়ে রাখুন। কখনো ভুলবশত কিছু মুছে গেলে বা ভুল এন্ট্রি হয়ে গেলে, এই ব্যাকআপ ফাইল আপলোড করে আগের অবস্থায় ফিরে যেতে পারবেন। <b>নিয়মিত (যেমন সপ্তাহে একবার) ব্যাকআপ নামিয়ে কোথাও নিরাপদে রেখে দেওয়া ভালো অভ্যাস।</b></p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px;">
+      <button type="button" class="btn-outline" id="downloadBackupBtn">⬇️ ব্যাকআপ ডাউনলোড করুন</button>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <input type="file" id="restoreBackupInput" accept="application/json">
+      <button type="button" class="btn-outline" id="restoreBackupBtn">⬆️ ব্যাকআপ থেকে ফিরিয়ে আনুন</button>
+    </div>
+    <p class="att-note" style="margin-top:10px;">⚠️ রিস্টোর করলে এখনকার সব ডেটা মুছে ব্যাকআপ ফাইলেরটা বসে যাবে — এটা পূর্বাবস্থায় ফেরানো যায় না। তাই রিস্টোরের আগে একটা নতুন ব্যাকআপ নামিয়ে রাখা বুদ্ধিমানের কাজ।</p>
+
+    <h3 style="font-size:15px;margin:22px 0 8px;">PDF ব্যবস্থাপনা</h3>
     <p class="view-note">নিচে থেকে PDF আপলোড করলে সেটা ক্লাউডে সেভ হয়ে "Project সম্পর্কে" / "Invest সম্পর্কে" বাটনে সবাই (পাবলিকসহ) দেখতে পারবে। PDF ফাইল ছোট রাখুন (৩০০-৪০০ KB-এর মধ্যে হলে নিরাপদ), নাহলে সেভ ব্যর্থ হতে পারে। আপলোড না করলে, বিকল্প হিসেবে <b>project-plan.pdf</b> ও <b>invest-plan.pdf</b> নামে ফাইল GitHub রিপোতে HTML ফাইলের পাশে রাখলেও কাজ করবে।</p>
     <div id="pdfAdminControls">
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
@@ -3548,6 +3560,55 @@ function exportStaffPayrollCsv(){
   URL.revokeObjectURL(url);
 }
 document.getElementById("exportStaffCsvBtn").addEventListener("click", exportStaffPayrollCsv);
+
+/* ---------- Full data backup / restore (admin only) ---------- */
+function downloadBackup(){
+  const payload = { backupVersion: 1, savedAt: new Date().toISOString(), data: DATA };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `munshi-agro-backup-${todayISO()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast("ব্যাকআপ ডাউনলোড হয়ে গেছে।", "success");
+}
+document.getElementById("downloadBackupBtn").addEventListener("click", downloadBackup);
+
+document.getElementById("restoreBackupBtn").addEventListener("click", () => {
+  const fileInput = document.getElementById("restoreBackupInput");
+  const file = fileInput.files && fileInput.files[0];
+  if (!file) { showToast("আগে একটা ব্যাকআপ (.json) ফাইল বেছে নিন।", "error"); return; }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    let parsed;
+    try { parsed = JSON.parse(reader.result); }
+    catch (err) { showToast("এই ফাইলটা পড়া গেল না — এটা কি সঠিক ব্যাকআপ (.json) ফাইল?", "error"); return; }
+
+    const restoredData = (parsed && parsed.data && typeof parsed.data === "object") ? parsed.data : parsed;
+    if (!restoredData || !Array.isArray(restoredData.entries)) {
+      showToast("এই ফাইলটা মুন্সী এগ্রোর ব্যাকআপ বলে মনে হচ্ছে না।", "error");
+      return;
+    }
+
+    const savedAtText = parsed && parsed.savedAt ? new Date(parsed.savedAt).toLocaleString("bn-BD") : "অজানা সময়";
+    showConfirmDialog(
+      `এটা ${savedAtText}-এর একটা ব্যাকআপ। এখনকার সব ডেটা মুছে এই ব্যাকআপটা বসানো হবে — এটা ফেরানো যাবে না। এগিয়ে যেতে চান?`,
+      () => {
+        DATA = normalizeData(restoredData);
+        saveState();
+        renderAll();
+        applyAdminUI();
+        fileInput.value = "";
+        showNotice({ icon: "✅", title: "রিস্টোর সম্পন্ন হয়েছে", text: "ব্যাকআপ থেকে ডেটা ফিরিয়ে আনা হয়েছে এবং ক্লাউডেও সেভ হয়েছে।" });
+      }
+    );
+  };
+  reader.readAsText(file);
+});
 
 /* init */
 function startApp(){
