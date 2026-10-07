@@ -424,6 +424,23 @@
   .att-cal-day.leave { background: var(--brown); color: var(--white); }
   .att-cal-day.absent { background: var(--red); color: var(--white); }
   .att-cal-day.future { background: var(--bg); color: var(--muted); border: 1px dashed var(--soft); }
+
+  .mywork-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; align-items: stretch; }
+  @media (max-width: 680px) { .mywork-row { grid-template-columns: 1fr; } }
+  .mywork-box {
+    background: var(--bg); border: 1.5px solid var(--soft); border-radius: 12px;
+    padding: 14px; display: flex; flex-direction: column;
+  }
+  .mywork-box h3 { font-size: 14.5px; margin: 0 0 10px; color: var(--dark); }
+  .mywork-box .btn { margin-top: auto; }
+
+  .staff-profile-pic {
+    width: 72px; height: 72px; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--mid); background: var(--soft); flex: 0 0 auto;
+  }
+  .staff-profile-pic.placeholder {
+    display: flex; align-items: center; justify-content: center; font-size: 28px; color: var(--muted);
+  }
   /* payment history */
   .pay-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; border-bottom: 1px dashed var(--soft); padding: 9px 0; font-size: 13.5px; flex-wrap: wrap; }
   .pay-row:last-child { border-bottom: none; }
@@ -798,23 +815,38 @@
   <div class="card section-panel admin-hidden" id="myWorkCard" data-panel-id="panelMyWork">
     <h2>আমার হাজিরা ও রিপোর্ট</h2>
     <p class="view-note">প্রতিদিন হাজিরা দিন, দিনের কাজের সংক্ষিপ্ত রিপোর্ট জমা দিন, প্রয়োজনে ছুটির আবেদন করুন — সবকিছু অ্যাডমিন দেখতে পাবেন।</p>
-    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;">
-      <button type="button" id="markAttendanceBtn" class="btn" style="width:auto;">✅ আজকের হাজিরা দিন</button>
+
+    <h3 style="font-size:15px; margin:6px 0 10px;">👤 আমার প্রোফাইল</h3>
+    <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:20px;">
+      <img id="myProfilePic" class="staff-profile-pic" style="display:none;" alt="প্রোফাইল ছবি">
+      <div id="myProfilePicPlaceholder" class="staff-profile-pic placeholder">👤</div>
+      <div style="flex:1; min-width:180px;">
+        <div id="myProfileSummary" class="view-note" style="margin-bottom:8px;">প্রোফাইল এখনো সম্পূর্ণ করেননি।</div>
+        <button type="button" id="editMyProfileBtn" class="staff-btn" style="width:auto;">✏️ প্রোফাইল তৈরি/সম্পাদনা করুন</button>
+      </div>
     </div>
-    <div id="attendanceStatus" class="view-note" style="margin-bottom:18px;"></div>
+
+    <div class="mywork-row">
+      <div class="mywork-box">
+        <h3>✅ আজকের হাজিরা</h3>
+        <button type="button" id="markAttendanceBtn" class="btn" style="width:auto;">✅ আজকের হাজিরা দিন</button>
+        <div id="attendanceStatus" class="view-note" style="margin-top:10px;"></div>
+      </div>
+      <div class="mywork-box">
+        <h3>📝 আজকের কাজের রিপোর্ট</h3>
+        <p class="view-note" style="margin-bottom:10px;">যে কাজ করেছেন তাতে ট্যাপ করুন (একাধিক বাছা যায়), চাইলে নিচে বাড়তি বিবরণও লিখুন।</p>
+        <div id="reportTemplateChips" class="tmpl-chips"></div>
+        <textarea id="dailyReportInput" rows="2" placeholder="বাড়তি বিবরণ (ঐচ্ছিক)..."
+          style="width:100%; padding:10px 12px; border-radius:10px; border:1.5px solid var(--soft); font-family:inherit; font-size:15px; background:var(--white); color:var(--text); margin-bottom:10px;"></textarea>
+        <button type="button" id="submitReportBtn" class="btn">রিপোর্ট জমা দিন</button>
+      </div>
+    </div>
 
     <h3 style="font-size:15px; margin:6px 0 8px;">📅 এই মাসের হাজিরা</h3>
     <div id="myAttendanceCalendar" style="margin-bottom:10px;"></div>
 
     <h3 style="font-size:15px; margin:20px 0 8px;">💵 বেতন পরিশোধের ইতিহাস</h3>
     <div id="myPaymentsList" style="margin-bottom:20px;"></div>
-
-    <h3 style="font-size:15px; margin:6px 0 8px;">আজকের কাজের রিপোর্ট</h3>
-    <p class="view-note" style="margin-bottom:10px;">যে কাজ করেছেন তাতে ট্যাপ করুন (একাধিক বাছা যায়), চাইলে নিচে বাড়তি বিবরণও লিখুন।</p>
-    <div id="reportTemplateChips" class="tmpl-chips"></div>
-    <textarea id="dailyReportInput" rows="2" placeholder="বাড়তি বিবরণ (ঐচ্ছিক)..."
-      style="width:100%; padding:10px 12px; border-radius:10px; border:1.5px solid var(--soft); font-family:inherit; font-size:15px; background:var(--bg); color:var(--text); margin-bottom:10px;"></textarea>
-    <button type="button" id="submitReportBtn" class="btn" style="margin-bottom:20px;">রিপোর্ট জমা দিন</button>
 
     <h3 style="font-size:15px; margin:6px 0 8px;">আমার সাম্প্রতিক রিপোর্ট</h3>
     <div id="myReportsList" style="margin-bottom:20px;"></div>
@@ -1050,6 +1082,53 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="confirmRevokeOverlay" style="display:none;">
+  <div class="modal-box">
+    <button type="button" class="modal-close" id="confirmRevokeClose">✕</button>
+    <h2 style="color:#b3261e;">⚠️ স্টাফের এক্সেস বাতিল করবেন?</h2>
+    <p class="view-note"><b>ভালো করে যাচাই করে নিশ্চিত হন</b> — এক্সেস বাতিল হলে এই স্টাফ আর লগইন করতে পারবেন না, এবং তাকে আবার নতুন করে অনুমোদন করতে হবে।</p>
+    <div class="table-wrap" style="margin:14px 0;">
+      <table><tbody id="confirmRevokeDetails"></tbody></table>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button type="button" id="confirmRevokeCancel"
+        style="flex:1; border:1.5px solid var(--soft); border-radius:10px; padding:12px; background:var(--white); color:var(--dark); font-family:inherit; font-weight:700; cursor:pointer;">বাতিল করুন</button>
+      <button type="button" id="confirmRevokeYes"
+        style="flex:1; border:none; border-radius:10px; padding:12px; background:#b3261e; color:white; font-family:inherit; font-weight:700; cursor:pointer;">হ্যাঁ, এক্সেস বাতিল করুন</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="myProfileOverlay" style="display:none;">
+  <div class="modal-box">
+    <button type="button" class="modal-close" id="myProfileClose">✕</button>
+    <h2>👤 আমার প্রোফাইল</h2>
+    <p class="view-note">ছবি ও তথ্য শুধু অ্যাডমিন এবং আপনি নিজে দেখতে পাবেন।</p>
+
+    <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
+      <img id="profileFormPicPreview" class="staff-profile-pic" style="display:none;" alt="প্রোফাইল ছবি">
+      <div id="profileFormPicPlaceholder" class="staff-profile-pic placeholder">👤</div>
+      <div>
+        <input type="file" id="profileFormPhotoInput" accept="image/*" style="font-size:13px;">
+        <p class="view-note" style="margin:6px 0 0; font-size:12px;">ছোট ছবি দিন (৩০০ KB-এর কম হলে ভালো)।</p>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+      <input type="text" id="profileFormName" placeholder="পূর্ণ নাম"
+        style="padding:10px 12px; border-radius:10px; border:1.5px solid var(--soft); font-family:inherit; font-size:15px; background:var(--bg); color:var(--text);">
+      <input type="tel" id="profileFormPhone" placeholder="মোবাইল নম্বর"
+        style="padding:10px 12px; border-radius:10px; border:1.5px solid var(--soft); font-family:inherit; font-size:15px; background:var(--bg); color:var(--text);">
+      <input type="text" id="profileFormNid" placeholder="NID নম্বর"
+        style="padding:10px 12px; border-radius:10px; border:1.5px solid var(--soft); font-family:inherit; font-size:15px; background:var(--bg); color:var(--text);">
+      <textarea id="profileFormAddress" rows="2" placeholder="ঠিকানা"
+        style="padding:10px 12px; border-radius:10px; border:1.5px solid var(--soft); font-family:inherit; font-size:15px; background:var(--bg); color:var(--text);"></textarea>
+    </div>
+    <p class="form-submit-error" id="profileFormError" role="alert" style="display:none; color:#b3261e; margin-bottom:10px;"></p>
+    <button type="button" id="saveMyProfileBtn" class="btn">প্রোফাইল সেভ করুন</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="staffDetailOverlay" style="display:none;">
   <div class="modal-box wide">
     <button type="button" class="modal-close" id="staffDetailClose">✕</button>
@@ -1108,6 +1187,8 @@ function ensureStaffExtras(rec){
   if (!rec.reports) rec.reports = [];
   if (!rec.phone) rec.phone = "";
   if (!rec.nid) rec.nid = "";
+  if (!rec.address) rec.address = "";
+  if (!rec.photo) rec.photo = "";
   return rec;
 }
 (DATA.staff.approved || []).forEach(ensureStaffExtras);
@@ -1900,7 +1981,7 @@ function renderStaffLists(){
         </div>`;
       apprWrap.appendChild(row);
     });
-    apprWrap.querySelectorAll(".revoke").forEach(b=> b.onclick = () => revokeStaff(b.dataset.id));
+    apprWrap.querySelectorAll(".revoke").forEach(b=> b.onclick = () => openRevokeConfirm(b.dataset.id));
     apprWrap.querySelectorAll(".setsal").forEach(b=> b.onclick = () => setStaffSalary(b.dataset.id));
     apprWrap.querySelectorAll(".setcontact").forEach(b=> b.onclick = () => setStaffContact(b.dataset.id));
     apprWrap.querySelectorAll(".viewrep").forEach(b=> b.onclick = () => viewStaffReportsAndLeaves(b.dataset.id));
@@ -2398,6 +2479,42 @@ function generateEmployeeId(){
   } while ((DATA.staff.approved || []).find(r => r.employeeId === id));
   return id;
 }
+
+let pendingRevokeId = null;
+
+function openRevokeConfirm(id){
+  const r = (DATA.staff.approved || []).find(r=>r.id===id);
+  if (!r) return;
+  pendingRevokeId = id;
+  const body = document.getElementById("confirmRevokeDetails");
+  body.innerHTML = `
+    <tr><td>নাম</td><td>${r.name || "—"}</td></tr>
+    <tr><td>Employee ID</td><td>${r.employeeId || "—"}</td></tr>
+    <tr><td>ইমেইল</td><td>${r.email}</td></tr>
+    <tr><td>ফোন</td><td>${r.phone || "—"}</td></tr>
+  `;
+  openModal("confirmRevokeOverlay");
+}
+document.getElementById("confirmRevokeClose").addEventListener("click", () => {
+  pendingRevokeId = null;
+  closeModal("confirmRevokeOverlay");
+});
+document.getElementById("confirmRevokeCancel").addEventListener("click", () => {
+  pendingRevokeId = null;
+  closeModal("confirmRevokeOverlay");
+});
+document.getElementById("confirmRevokeOverlay").addEventListener("click", (ev) => {
+  if (ev.target.id === "confirmRevokeOverlay") {
+    pendingRevokeId = null;
+    closeModal("confirmRevokeOverlay");
+  }
+});
+document.getElementById("confirmRevokeYes").addEventListener("click", () => {
+  if (!isAdmin || !pendingRevokeId) return;
+  revokeStaff(pendingRevokeId);
+  pendingRevokeId = null;
+  closeModal("confirmRevokeOverlay");
+});
 
 function revokeStaff(id){
   DATA.staff.approved = DATA.staff.approved.filter(r=>r.id!==id);
@@ -3022,6 +3139,7 @@ function renderMyWork(){
   const leavesEl = document.getElementById("myLeavesList");
   if (!rec) { statusEl.textContent = "স্টাফ তথ্য পাওয়া যায়নি।"; return; }
   ensureStaffExtras(rec);
+  renderMyProfile(rec);
   const today = todayISO();
   const doneToday = rec.attendance[today] === "present";
   statusEl.textContent = doneToday ? "✅ আজকের হাজিরা দেওয়া হয়ে গেছে।" : "আজকের হাজিরা এখনো দেননি।";
@@ -3065,6 +3183,104 @@ function renderMyWork(){
     leavesEl.appendChild(d);
   });
 }
+
+function renderMyProfile(rec){
+  const pic = document.getElementById("myProfilePic");
+  const placeholder = document.getElementById("myProfilePicPlaceholder");
+  const summary = document.getElementById("myProfileSummary");
+  if (rec.photo) {
+    pic.src = rec.photo; pic.style.display = "block"; placeholder.style.display = "none";
+  } else {
+    pic.style.display = "none"; placeholder.style.display = "flex";
+  }
+  const parts = [];
+  if (rec.phone) parts.push("📞 " + rec.phone);
+  if (rec.nid) parts.push("NID: " + rec.nid);
+  if (rec.address) parts.push("🏠 " + rec.address);
+  summary.textContent = parts.length ? parts.join(" · ") : "প্রোফাইল এখনো সম্পূর্ণ করেননি।";
+}
+
+// ব্রাউজারেই ছবি ছোট করে (max ৪০০px, jpeg ৭৫%) base64 বানানো হয়, যাতে Firestore ডকুমেন্ট বড় হয়ে না যায়
+function compressImageFile(file, maxSize, callback){
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > h && w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; }
+      else if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; }
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL("image/jpeg", 0.75));
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+let profileFormPhotoData = null;
+
+document.getElementById("editMyProfileBtn").addEventListener("click", () => {
+  const rec = currentStaffRecord();
+  if (!rec) return;
+  profileFormPhotoData = rec.photo || null;
+  document.getElementById("profileFormName").value = rec.name || "";
+  document.getElementById("profileFormPhone").value = rec.phone || "";
+  document.getElementById("profileFormNid").value = rec.nid || "";
+  document.getElementById("profileFormAddress").value = rec.address || "";
+  document.getElementById("profileFormPhotoInput").value = "";
+  document.getElementById("profileFormError").style.display = "none";
+  const prev = document.getElementById("profileFormPicPreview");
+  const ph = document.getElementById("profileFormPicPlaceholder");
+  if (rec.photo) { prev.src = rec.photo; prev.style.display = "block"; ph.style.display = "none"; }
+  else { prev.style.display = "none"; ph.style.display = "flex"; }
+  openModal("myProfileOverlay");
+});
+
+document.getElementById("profileFormPhotoInput").addEventListener("change", (ev) => {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  compressImageFile(file, 400, (dataUrl) => {
+    profileFormPhotoData = dataUrl;
+    const prev = document.getElementById("profileFormPicPreview");
+    const ph = document.getElementById("profileFormPicPlaceholder");
+    prev.src = dataUrl; prev.style.display = "block"; ph.style.display = "none";
+  });
+});
+
+document.getElementById("myProfileClose").addEventListener("click", () => closeModal("myProfileOverlay"));
+document.getElementById("myProfileOverlay").addEventListener("click", (ev) => {
+  if (ev.target.id === "myProfileOverlay") closeModal("myProfileOverlay");
+});
+
+document.getElementById("saveMyProfileBtn").addEventListener("click", () => {
+  const rec = currentStaffRecord();
+  const errEl = document.getElementById("profileFormError");
+  if (!rec) return;
+  const name = document.getElementById("profileFormName").value.trim();
+  const phone = document.getElementById("profileFormPhone").value.trim();
+  const nid = document.getElementById("profileFormNid").value.trim();
+  const address = document.getElementById("profileFormAddress").value.trim();
+
+  if (!name) {
+    errEl.textContent = "নাম লেখা আবশ্যক।";
+    errEl.style.display = "block";
+    return;
+  }
+  errEl.style.display = "none";
+
+  rec.name = name;
+  rec.phone = phone;
+  rec.nid = nid;
+  rec.address = address;
+  if (profileFormPhotoData) rec.photo = profileFormPhotoData;
+
+  saveState();
+  renderMyWork();
+  renderStaffLists();
+  closeModal("myProfileOverlay");
+});
 
 document.getElementById("markAttendanceBtn").addEventListener("click", () => {
   const rec = currentStaffRecord();
