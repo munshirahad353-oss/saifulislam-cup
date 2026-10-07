@@ -4,19 +4,19 @@
    =========================================================== */
 
 :root {
-  /* ---- refined natural palette: deep forest, ripened paddy, wheat/harvest gold ---- */
-  --soil: #1B3A2F;
-  --soil-soft: #2F6B4F;
-  --paddy: #5C8D5A;
-  --paddy-deep: #35603F;
-  --water: #5E8B85;
-  --harvest: #D98A3D;
-  --harvest-deep: #7A4A24;
-  --harvest-soft: #F6E7C9;
-  --husk: #F5F1E6;
-  --husk-deep: #E2E6D4;
-  --ink: #23302A;
-  --ink-soft: #5B6B5E;
+  /* ---- refined natural palette, deepened: richer forest/paddy green, warmer sand (no pale ivory) ---- */
+  --soil: #14271F;
+  --soil-soft: #244A36;
+  --paddy: #3F7A52;
+  --paddy-deep: #28513A;
+  --water: #3F6E68;
+  --harvest: #C97A2E;
+  --harvest-deep: #693D1E;
+  --harvest-soft: #EDDBB2;
+  --husk: #EDE6D3;
+  --husk-deep: #D8D9BE;
+  --ink: #1C2621;
+  --ink-soft: #4C5A4F;
   --white: #FFFFFF;
 
   --serif: 'Tiro Bangla', 'Noto Serif Bengali', Georgia, serif;
@@ -109,7 +109,7 @@ a:focus-visible, button:focus-visible {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(245, 241, 230, 0.92);
+  background: rgba(237, 230, 211, 0.92);
   backdrop-filter: saturate(140%) blur(6px);
   border-bottom: 1px solid rgba(46, 33, 21, 0.12);
 }
