@@ -5,18 +5,18 @@
 
 :root {
   /* ---- refined natural palette, deepened: richer forest/paddy green, warmer sand (no pale ivory) ---- */
-  --soil: #14271F;
-  --soil-soft: #244A36;
-  --paddy: #3F7A52;
-  --paddy-deep: #28513A;
-  --water: #3F6E68;
-  --harvest: #C97A2E;
-  --harvest-deep: #693D1E;
-  --harvest-soft: #EDDBB2;
-  --husk: #EDE6D3;
-  --husk-deep: #D8D9BE;
-  --ink: #1C2621;
-  --ink-soft: #4C5A4F;
+  --soil: #0C2B1F;
+  --soil-soft: #16503A;
+  --paddy: #2E8B57;
+  --paddy-deep: #1D6B42;
+  --water: #1F5C56;
+  --harvest: #CA9A3E;
+  --harvest-deep: #7A5518;
+  --harvest-soft: #F4E8C8;
+  --husk: #E6F2DE;
+  --husk-deep: #CFE5C2;
+  --ink: #16241C;
+  --ink-soft: #46574C;
   --white: #FFFFFF;
 
   --serif: 'Tiro Bangla', 'Noto Serif Bengali', Georgia, serif;
@@ -109,7 +109,7 @@ a:focus-visible, button:focus-visible {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(237, 230, 211, 0.92);
+  background: rgba(230, 242, 222, 0.92);
   backdrop-filter: saturate(140%) blur(6px);
   border-bottom: 1px solid rgba(46, 33, 21, 0.12);
 }
