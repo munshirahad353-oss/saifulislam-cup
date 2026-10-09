@@ -842,15 +842,6 @@
       </div>
     </div>
 
-    <h3 style="font-size:15px; margin:6px 0 8px;">📅 এই মাসের হাজিরা</h3>
-    <div id="myAttendanceCalendar" style="margin-bottom:10px;"></div>
-
-    <h3 style="font-size:15px; margin:20px 0 8px;">💵 বেতন পরিশোধের ইতিহাস</h3>
-    <div id="myPaymentsList" style="margin-bottom:20px;"></div>
-
-    <h3 style="font-size:15px; margin:6px 0 8px;">আমার সাম্প্রতিক রিপোর্ট</h3>
-    <div id="myReportsList" style="margin-bottom:20px;"></div>
-
     <h3 style="font-size:15px; margin:20px 0 8px;">ছুটির আবেদন</h3>
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; margin-bottom:10px;">
       <input type="date" id="leaveDateInput"
@@ -861,7 +852,16 @@
     <button type="button" id="requestLeaveBtn" class="staff-btn" style="background:var(--amber-soft); color:var(--dark); border-color:var(--amber); margin-bottom:20px;">🏖️ ছুটির আবেদন জমা দিন</button>
 
     <h3 style="font-size:15px; margin:6px 0 8px;">আমার ছুটির আবেদন</h3>
-    <div id="myLeavesList"></div>
+    <div id="myLeavesList" style="margin-bottom:20px;"></div>
+
+    <h3 style="font-size:15px; margin:6px 0 8px;">📅 এই মাসের হাজিরা</h3>
+    <div id="myAttendanceCalendar" style="margin-bottom:10px;"></div>
+
+    <h3 style="font-size:15px; margin:20px 0 8px;">💵 বেতন পরিশোধের ইতিহাস</h3>
+    <div id="myPaymentsList" style="margin-bottom:20px;"></div>
+
+    <h3 style="font-size:15px; margin:6px 0 8px;">আমার সাম্প্রতিক রিপোর্ট</h3>
+    <div id="myReportsList" style="margin-bottom:20px;"></div>
   </div>
 
   <div class="card section-panel admin-hidden" id="investorAdminCard" data-panel-id="panelInvestors">
@@ -1132,8 +1132,14 @@
 <div class="modal-overlay" id="staffDetailOverlay" style="display:none;">
   <div class="modal-box wide">
     <button type="button" class="modal-close" id="staffDetailClose">✕</button>
-    <h2 id="staffDetailTitle">স্টাফ</h2>
-    <p class="view-note" id="staffDetailSub"></p>
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
+      <img id="staffDetailPic" class="staff-profile-pic" style="display:none;" alt="প্রোফাইল ছবি">
+      <div id="staffDetailPicPlaceholder" class="staff-profile-pic placeholder">👤</div>
+      <div>
+        <h2 id="staffDetailTitle" style="margin:0 0 2px;">স্টাফ</h2>
+        <p class="view-note" id="staffDetailSub" style="margin:0;"></p>
+      </div>
+    </div>
 
     <h3 style="font-size:15px; margin:16px 0 8px;">📊 হাজিরা ও বেতন হিসাব</h3>
     <div class="day-toolbar">
@@ -1970,9 +1976,17 @@ function renderStaffLists(){
       const pendingLeaves = r.leaves.filter(l=>l.status==="pending").length;
       const row = document.createElement("div");
       row.className = "req-row";
+      const photoHtml = r.photo
+        ? `<img src="${r.photo}" class="staff-profile-pic" style="width:40px;height:40px;" alt="${r.name || r.email}">`
+        : `<div class="staff-profile-pic placeholder" style="width:40px;height:40px;font-size:16px;">👤</div>`;
       row.innerHTML = `
-        <div class="req-info"><b>${r.name || r.email} ${r.employeeId ? "— " + r.employeeId : ""}</b>
-          <span>${r.email}${r.phone ? " · 📞 " + r.phone : ""}${r.nid ? " · NID: " + r.nid : ""} · বেতন: ৳${r.salary || 0} · এই মাসে উপস্থিতি: ${presentCount} দিন${pendingLeaves ? " · ছুটির অনুরোধ: " + pendingLeaves : ""}</span></div>
+        <div class="req-info" style="display:flex; align-items:center; gap:10px;">
+          ${photoHtml}
+          <div>
+            <b>${r.name || r.email} ${r.employeeId ? "— " + r.employeeId : ""}</b>
+            <span>${r.email}${r.phone ? " · 📞 " + r.phone : ""}${r.nid ? " · NID: " + r.nid : ""} · বেতন: ৳${r.salary || 0} · এই মাসে উপস্থিতি: ${presentCount} দিন${pendingLeaves ? " · ছুটির অনুরোধ: " + pendingLeaves : ""}</span>
+          </div>
+        </div>
         <div class="req-actions">
           <button class="setsal" data-id="${r.id}">বেতন সেট</button>
           <button class="setcontact" data-id="${r.id}">নাম্বার/NID</button>
@@ -2357,6 +2371,10 @@ function renderStaffDetailModal(dateFilterValue){
   document.getElementById("staffDetailTitle").textContent = r.name || r.email;
   document.getElementById("staffDetailSub").textContent =
     `Employee ID: ${r.employeeId || "—"} · ${r.email}${r.phone ? " · 📞 " + r.phone : ""}`;
+  const detailPic = document.getElementById("staffDetailPic");
+  const detailPicPh = document.getElementById("staffDetailPicPlaceholder");
+  if (r.photo) { detailPic.src = r.photo; detailPic.style.display = "block"; detailPicPh.style.display = "none"; }
+  else { detailPic.style.display = "none"; detailPicPh.style.display = "flex"; }
 
   renderStaffAttendance(r);
 

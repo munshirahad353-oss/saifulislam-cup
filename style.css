@@ -232,6 +232,8 @@ a:focus-visible, button:focus-visible {
 }
 
 .hero-grid {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 1.3fr 1fr;
   gap: 48px;
@@ -638,6 +640,43 @@ a:focus-visible, button:focus-visible {
 .hero-decor .water-line { stroke: var(--water); }
 @media (max-width: 860px) {
   .hero-decor { display: none; }
+}
+
+/* ---------- floating farm-themed vector icons ---------- */
+.floating-icons {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.float-icon {
+  position: absolute;
+  stroke: currentColor;
+  fill: none;
+  opacity: 0.16;
+  animation: floatDrift 9s ease-in-out infinite;
+}
+/* leaf */
+.fi-1 { top: 4%; right: 24%; width: 40px; color: var(--paddy); animation-duration: 10s; }
+/* fish */
+.fi-2 { top: 86%; right: 30%; width: 52px; color: var(--water); animation-duration: 12s; animation-delay: -2s; }
+/* leaf (droplet-leaf) */
+.fi-3 { top: 20%; right: 4%; width: 32px; color: var(--harvest-deep); animation-duration: 8.5s; animation-delay: -4s; }
+/* egg */
+.fi-4 { top: 80%; right: 14%; width: 30px; color: var(--soil-soft); animation-duration: 11s; animation-delay: -1s; }
+/* chili / fruit drop */
+.fi-5 { top: 48%; right: 1%; width: 34px; color: var(--harvest); animation-duration: 9.5s; animation-delay: -5s; }
+
+@keyframes floatDrift {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-16px) rotate(6deg); }
+}
+@media (max-width: 860px) {
+  .floating-icons { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .float-icon { animation: none; }
 }
 
 /* ---------- availability badge ---------- */
